@@ -26,7 +26,15 @@ class AppointmentDetailsController extends Controller
                 'cliniccenter',
                 'category',
                 'appointmenttransaction',
-                'otherPatient'
+                'otherPatient',
+
+                    'patientConditions',
+                    'patientMedications',
+                    'patientAllergies',
+                    'patientSocialHistories',
+                    'patientFamilyHistories',
+                    'patientObservations',
+
             ])->findOrFail($id);
 
             // Try to get draft appointment data (may have been deleted after booking)
@@ -173,6 +181,15 @@ class AppointmentDetailsController extends Controller
                     'start_video_link' => $appointment->start_video_link,
                     'join_video_link' => $appointment->join_video_link,
                     'meet_link' => $appointment->meet_link,
+                ],
+
+                'clinical_history' => [
+                    'conditions' => $appointment->patientConditions,
+                    'medications' => $appointment->patientMedications,
+                    'allergies' => $appointment->patientAllergies,
+                    'social_histories' => $appointment->patientSocialHistories,
+                    'family_histories' => $appointment->patientFamilyHistories,
+                    'observations' => $appointment->patientObservations,
                 ],
             ];
 

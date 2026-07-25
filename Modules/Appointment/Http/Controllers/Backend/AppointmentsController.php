@@ -530,11 +530,79 @@ class AppointmentsController extends Controller
             $wallet_amount = $user_wallet->amount;
         }
 
-        if (isset($request->action_type) && $request->action_type == 'update-status') {
+        // if (isset($request->action_type) && $request->action_type == 'update-status') {
 
+        //     $status = $request->value;
+        // }
+        // $appointment->status = $status;
+
+        if (
+            isset($request->action_type) &&
+            $request->action_type === 'update-status'
+        ) {
             $status = $request->value;
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validate appointment status
+        |--------------------------------------------------------------------------
+        */
+
+        $allowedStatuses = Constant::query()
+            ->where('type', 'BOOKING_STATUS')
+            ->where('status', 1)
+            ->pluck('name')
+            ->all();
+
+        if (!in_array($status, $allowedStatuses, true)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Invalid appointment status selected.',
+            ], 422);
+        }
+
         $appointment->status = $status;
+
+                    /*
+            |--------------------------------------------------------------------------
+            | New clinical workflow statuses
+            |--------------------------------------------------------------------------
+            */
+
+            switch ($status) {
+                case 'called_in':
+                    \Log::info('Patient called in', [
+                        'appointment_id' => $appointment->id,
+                        'updated_by' => auth()->id(),
+                        'updated_at' => now(),
+                    ]);
+                    break;
+
+                case 'seen':
+                    \Log::info('Patient marked as seen', [
+                        'appointment_id' => $appointment->id,
+                        'updated_by' => auth()->id(),
+                        'updated_at' => now(),
+                    ]);
+                    break;
+
+                case 'referred':
+                    \Log::info('Patient marked as referred', [
+                        'appointment_id' => $appointment->id,
+                        'updated_by' => auth()->id(),
+                        'updated_at' => now(),
+                    ]);
+                    break;
+
+                case 'dna':
+                    \Log::info('Patient did not attend', [
+                        'appointment_id' => $appointment->id,
+                        'updated_by' => auth()->id(),
+                        'updated_at' => now(),
+                    ]);
+                    break;
+            }
 
         if ($status == 'check_in') {
 

@@ -1592,38 +1592,6 @@ function capitalizeFirstLetter(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-
-// new data feilds start
-
-function appendClinicalHistoryToFormData(formData) {
-  const container = document.getElementById('patient-clinical-history')
-
-  if (!container) return
-
-  container.querySelectorAll('[name]').forEach((input) => {
-    // Ignore unchecked checkboxes and radio buttons
-    if (
-      (input.type === 'checkbox' || input.type === 'radio') &&
-      !input.checked
-    ) {
-      return
-    }
-
-    const value =
-      typeof input.value === 'string'
-        ? input.value.trim()
-        : input.value
-
-    // Ignore empty clinical fields
-    if (value === '' || value === null || value === undefined) {
-      return
-    }
-
-    formData.append(input.name, value)
-  })
-}
-// new data feilds ends
-
 async function submitForm() {
   event.stopPropagation()
 
@@ -1709,10 +1677,6 @@ async function submitForm() {
   formData.append('otherpatient_id', otherpatient_id)
   formData.append('appointment_extra_info', document.getElementById('appointment_extra_info').value)
   // Log formData
-
-    // new data form appends here
-  appendClinicalHistoryToFormData(formData)
-    // new data form appends here
 
   // Submit the form via fetch or other methods
   fetch(routes.saveAppointment, {
@@ -1846,6 +1810,14 @@ async function submitForm() {
                          <a href="#" class="text-decoration-none fw-semibold">${paymentDetails.serviceName}</a></p>
                         <p class="mb-2 text-body">Booking ID:
                          <a href="#" class="text-decoration-none fw-semibold">#${paymentDetails.bookingId}</a></p>
+                         <div class="bg-primary-subtle border-none rounded-3 p-3 my-3 text-start">
+
+  <p class="mb-1"><i class="ph ph-map-pin"></i> ${paymentDetails.clinicAddress || ''}</p>
+  ${paymentDetails.clinicPhone ? `<p class="mb-1"><i class="ph ph-phone"></i> ${paymentDetails.clinicPhone}</p>` : ''}
+  ${paymentDetails.mapUrl ? `<a href="${paymentDetails.mapUrl}" target="_blank" class="btn btn-sm btn-outline-primary mt-1">Get Directions</a>` : ''}
+  <p class="mt-2 mb-0 text-warning fw-semibold"><i class="ph ph-clock"></i> ${paymentDetails.arrivalNote || 'Please arrive 10 minutes early.'}</p>
+
+  </div>
 
 <div class="bg-primary-subtle border-none rounded-3 p-3 my-3 text-start">
 

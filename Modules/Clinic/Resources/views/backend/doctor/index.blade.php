@@ -4,6 +4,10 @@
     {{ __($module_title) }}
 @endsection
 
+@include(
+    'clinic::backend.doctor.gmc-verification-modal'
+)
+
 @section('content')
 <div class="table-content">
     <x-backend.section-header>
@@ -192,6 +196,11 @@
     <button type="reset" class="btn btn-danger" id="reset-filter">{{ __('appointment.reset') }}</button>
 </x-backend.advance-filter>
 </div>
+
+<!-- 
+@include(
+    'clinic::backend.doctor.gmc-verification-modal'
+) -->
 
 @endsection
 
@@ -499,6 +508,274 @@
             offcanvas.show();
         }
     }
+</script>
+
+
+<!-- new gmc model -->
+
+
+<script>
+    let activeGmcUserId = null
+
+    function gmcUrl(path = '') {
+        return `{{ url('app/doctor') }}/${activeGmcUserId}/gmc-verification${path}`
+    }
+
+    function gmcCsrfToken() {
+        return document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute('content')
+    }
+
+    function setGmcLoading(loading) {
+        document
+            .getElementById('gmc-loading')
+            .classList.toggle('d-none', !loading)
+
+        document
+            .getElementById('gmc-content')
+            .classList.toggle('d-none', loading)
+    }
+
+    function setGmcBadge(status) {
+        const badge =
+            document.getElementById('gmc-status')
+
+        const colors = {
+            verified: 'bg-success',
+            pending: 'bg-warning text-dark',
+            not_licensed: 'bg-danger',
+            mismatch: 'bg-danger',
+            expired: 'bg-secondary',
+            unable_to_verify: 'bg-secondary'
+        }
+
+        badge.className =
+            `badge ${colors[status] || 'bg-secondary'}`
+
+        badge.textContent = status
+            ? status.replaceAll('_', ' ')
+            : 'Not checked'
+    }
+
+    window.openGmcVerificationModal =
+        async function (userId) {
+            activeGmcUserId = userId
+
+            const modalElement =
+                document.getElementById(
+                    'gmcVerificationModal'
+                )
+
+            bootstrap.Modal
+                .getOrCreateInstance(modalElement)
+                .show()
+
+            setGmcLoading(true)
+
+            try {
+                const response = await fetch(gmcUrl(), {
+                    headers: {
+                        Accept: 'application/json'
+                    }
+                })
+
+                const result = await response.json()
+
+                if (!response.ok) {
+                    throw new Error(
+                        result.message ||
+                        'Unable to load GMC verification.'
+                    )
+                }
+
+                const data = result.data
+                const verification = data.verification
+
+                document.getElementById(
+                    'gmc-doctor-name'
+                ).textContent = data.doctor_name || '—'
+
+                document.getElementById(
+                    'gmc-number'
+                ).textContent = data.gmc_number || 'Not provided'
+
+                document.getElementById(
+                    'gmc-invalid'
+                ).classList.toggle(
+                    'd-none',
+                    data.gmc_number_valid
+                )
+
+                document.getElementById(
+                    'gmc-valid-content'
+                ).classList.toggle(
+                    'd-none',
+                    !data.gmc_number_valid
+                )
+
+                document.getElementById(
+                    'gmc-official-link'
+                ).href =
+                    data.official_register_url || '#'
+
+                setGmcBadge(
+                    verification?.verification_status
+                )
+
+                document.getElementById(
+                    'gmc-registered-name'
+                ).value =
+                    verification?.registered_name || ''
+
+                document.getElementById(
+                    'gmc-registration-status'
+                ).value =
+                    verification?.registration_status || ''
+
+                document.getElementById(
+                    'gmc-has-licence'
+                ).value =
+                    verification?.has_licence_to_practise === true
+                        ? '1'
+                        : verification?.has_licence_to_practise === false
+                            ? '0'
+                            : ''
+
+                document.getElementById(
+                    'gmc-notes'
+                ).value =
+                    verification?.notes || ''
+
+                const download =
+                    document.getElementById(
+                        'gmc-certificate-download'
+                    )
+
+                download.href =
+                    gmcUrl('/certificate')
+
+                download.classList.toggle(
+                    'd-none',
+                    !verification?.certificate_path
+                )
+            } catch (error) {
+                alert(error.message)
+            } finally {
+                setGmcLoading(false)
+            }
+        }
+
+    document.getElementById(
+        'gmc-begin-button'
+    ).addEventListener('click', async function () {
+        const response = await fetch(
+            gmcUrl('/begin'),
+            {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': gmcCsrfToken(),
+                    Accept: 'application/json'
+                }
+            }
+        )
+
+        const result = await response.json()
+
+        if (!response.ok) {
+            alert(
+                result.message ||
+                'Unable to begin GMC verification.'
+            )
+            return
+        }
+
+        setGmcBadge('pending')
+
+        window.open(
+            result.data.official_register_url,
+            '_blank',
+            'noopener,noreferrer'
+        )
+    })
+
+    document.getElementById(
+        'gmc-confirm-form'
+    ).addEventListener('submit', async function (event) {
+        event.preventDefault()
+
+        const response = await fetch(
+            gmcUrl('/confirm'),
+            {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': gmcCsrfToken(),
+                    Accept: 'application/json'
+                },
+                body: new FormData(this)
+            }
+        )
+
+        const result = await response.json()
+
+        if (!response.ok) {
+            const message = result.errors
+                ? Object.values(result.errors)
+                    .flat()
+                    .join('\n')
+                : result.message
+
+            alert(message)
+            return
+        }
+
+        setGmcBadge(
+            result.data.verification_status
+        )
+
+        alert(result.message)
+    })
+
+    document.getElementById(
+        'gmc-certificate-form'
+    ).addEventListener('submit', async function (event) {
+        event.preventDefault()
+
+        const response = await fetch(
+            gmcUrl('/certificate'),
+            {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': gmcCsrfToken(),
+                    Accept: 'application/json'
+                },
+                body: new FormData(this)
+            }
+        )
+
+        const result = await response.json()
+
+        if (!response.ok) {
+            const message = result.errors
+                ? Object.values(result.errors)
+                    .flat()
+                    .join('\n')
+                : result.message
+
+            alert(message)
+            return
+        }
+
+        const download =
+            document.getElementById(
+                'gmc-certificate-download'
+            )
+
+        download.href = gmcUrl('/certificate')
+        download.classList.remove('d-none')
+
+        alert(result.message)
+    })
 </script>
 @endpush
 

@@ -37,6 +37,12 @@ use Modules\Appointment\Models\TemplateMedicalHistory;
 use Modules\Appointment\Models\TemplatePrescription;
 use Modules\Appointment\Models\TemplateOtherDetails;
 
+
+// use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Modules\Appointment\Models\EncounterClinicalPlan;
+// use Modules\Appointment\Models\PatientEncounter;
+
 class PatientEncounterController extends Controller
 {
     use EncounterTrait;
@@ -1146,7 +1152,35 @@ class PatientEncounterController extends Controller
 
         $module_title ="Encounter Dashboard";
 
-        $data = PatientEncounter::where('id',$id)->with('user','user.cities','user.countries','clinic','doctor','medicalHistroy','prescriptions','EncounterOtherDetails','medicalReport','appointmentdetail.clinicservice.systemservice','billingrecord')->first();
+        // $data = PatientEncounter::where('id',$id)->with('user','user.cities','user.countries','clinic','doctor','medicalHistroy','prescriptions','EncounterOtherDetails','medicalReport','appointmentdetail.clinicservice.systemservice','billingrecord')->first();
+
+        $data = PatientEncounter::with([
+            'user',
+            'user.cities',
+            'user.countries',
+            'clinic',
+            'doctor',
+            'medicalHistroy',
+            'prescriptions',
+            'EncounterOtherDetails',
+            'medicalReport',
+            'billingrecord',
+
+            // Appointment information
+            'appointmentdetail.clinicservice.systemservice',
+            'appointmentdetail.appointmenttransaction',
+
+            // Structured clinical information entered during booking
+            'appointmentdetail.patientConditions',
+            'appointmentdetail.patientMedications',
+            'appointmentdetail.patientAllergies',
+            'appointmentdetail.patientSocialHistories',
+            'appointmentdetail.patientFamilyHistories',
+            'appointmentdetail.patientObservations',
+            'clinicalPlan',
+
+        ])->findOrFail($id);
+
         $data['selectedProblemList'] =  $data->medicalHistroy()->where('type','encounter_problem')->get();
         $data['selectedObservationList'] = $data->medicalHistroy()->where('type', 'encounter_observations')->get();
         $data['notesList'] = $data->medicalHistroy()->where('type', 'encounter_notes')->get();
@@ -1182,7 +1216,241 @@ class PatientEncounterController extends Controller
         return view('appointment::backend.patient_encounter.encounter_detail_page', compact('module_title','data','template_data','encounter_data','problem_list','observation_list','prescription_list'));
 
        }
-       public function getTemplateData($templateId, Request $request)
+
+       public function saveClinicalPlan(Request $request, $id)
+        {
+            $encounter = PatientEncounter::with([
+                'appointmentdetail',
+                'doctor',
+                'clinicalPlan',
+            ])->findOrFail($id);
+
+            $validated = $request->validate([
+                'doctor_history' => [
+                    'nullable',
+                    'string',
+                    'max:20000',
+                ],
+                'examination_findings' => [
+                    'nullable',
+                    'string',
+                    'max:20000',
+                ],
+                'diagnosis' => [
+                    'nullable',
+                    'string',
+                    'max:20000',
+                ],
+                'treatment' => [
+                    'nullable',
+                    'string',
+                    'max:20000',
+                ],
+                'advice' => [
+                    'nullable',
+                    'string',
+                    'max:20000',
+                ],
+
+                'follow_up_interval' => [
+                    'nullable',
+                    'integer',
+                    'min:1',
+                    'max:3650',
+                ],
+                'follow_up_interval_unit' => [
+                    'nullable',
+                    'in:days,weeks,months',
+                ],
+                'follow_up_date' => [
+                    'nullable',
+                    'date',
+                ],
+                'follow_up_reason' => [
+                    'nullable',
+                    'string',
+                    'max:5000',
+                ],
+                'follow_up_status' => [
+                    'nullable',
+                    'in:not_required,planned,booked,completed,cancelled',
+                ],
+            ]);
+
+            $followUpRequired = $request->boolean(
+                'follow_up_required'
+            );
+
+            if (
+                $followUpRequired &&
+                empty($validated['follow_up_date']) &&
+                empty($validated['follow_up_interval'])
+            ) {
+                return redirect()
+                    ->back()
+                    ->withErrors([
+                        'follow_up_date' =>
+                            'Enter a follow-up date or follow-up interval.',
+                    ])
+                    ->withInput();
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Calculate the follow-up date from the interval
+            |--------------------------------------------------------------------------
+            */
+
+            $followUpDate = $validated['follow_up_date'] ?? null;
+
+            if (
+                $followUpRequired &&
+                !$followUpDate &&
+                !empty($validated['follow_up_interval'])
+            ) {
+                $interval = (int) $validated['follow_up_interval'];
+
+                $unit = $validated['follow_up_interval_unit']
+                    ?? 'weeks';
+
+                $calculatedDate = Carbon::today();
+
+                if ($unit === 'days') {
+                    $calculatedDate->addDays($interval);
+                } elseif ($unit === 'months') {
+                    $calculatedDate->addMonths($interval);
+                } else {
+                    $calculatedDate->addWeeks($interval);
+                }
+
+                $followUpDate = $calculatedDate->toDateString();
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Doctor snapshot
+            |--------------------------------------------------------------------------
+            */
+
+            $doctor = $encounter->doctor;
+
+            $doctorName = trim(
+                ($doctor->first_name ?? '') . ' ' .
+                ($doctor->last_name ?? '')
+            );
+
+            if ($doctorName === '') {
+                $doctorName = $doctor->full_name
+                    ?? $doctor->name
+                    ?? null;
+            }
+
+            $appointment = $encounter->appointmentdetail;
+
+            $currentUserId = auth()->id();
+
+            DB::transaction(function () use (
+                $encounter,
+                $appointment,
+                $doctor,
+                $doctorName,
+                $validated,
+                $followUpRequired,
+                $followUpDate,
+                $currentUserId
+            ) {
+                $existingPlan = EncounterClinicalPlan::withTrashed()
+                    ->where('encounter_id', $encounter->id)
+                    ->first();
+
+                $values = [
+                    'appointment_id' => $appointment?->id,
+
+                    'patient_id' => $appointment?->user_id
+                        ?? $encounter->user_id,
+
+                    'doctor_id' => $appointment?->doctor_id
+                        ?? $encounter->doctor_id,
+
+                    'doctor_history' =>
+                        $validated['doctor_history'] ?? null,
+
+                    'examination_findings' =>
+                        $validated['examination_findings'] ?? null,
+
+                    'diagnosis' =>
+                        $validated['diagnosis'] ?? null,
+
+                    'treatment' =>
+                        $validated['treatment'] ?? null,
+
+                    'advice' =>
+                        $validated['advice'] ?? null,
+
+                    'follow_up_required' => $followUpRequired,
+
+                    'follow_up_interval' => $followUpRequired
+                        ? ($validated['follow_up_interval'] ?? null)
+                        : null,
+
+                    'follow_up_interval_unit' => $followUpRequired
+                        ? (
+                            $validated['follow_up_interval_unit']
+                            ?? null
+                        )
+                        : null,
+
+                    'follow_up_date' => $followUpRequired
+                        ? $followUpDate
+                        : null,
+
+                    'follow_up_reason' => $followUpRequired
+                        ? ($validated['follow_up_reason'] ?? null)
+                        : null,
+
+                    'follow_up_status' => $followUpRequired
+                        ? (
+                            $validated['follow_up_status']
+                            ?? 'planned'
+                        )
+                        : 'not_required',
+
+                    'prescriber_name' => $doctorName,
+
+                    'prescriber_gmc_number' =>
+                        $doctor->gmc_number ?? null,
+
+                    'recorded_at' => now(),
+
+                    'updated_by' => $currentUserId,
+                ];
+
+                if ($existingPlan) {
+                    if ($existingPlan->trashed()) {
+                        $existingPlan->restore();
+                    }
+
+                    $existingPlan->update($values);
+                } else {
+                    EncounterClinicalPlan::create(
+                        array_merge($values, [
+                            'encounter_id' => $encounter->id,
+                            'created_by' => $currentUserId,
+                        ])
+                    );
+                }
+            });
+
+            return redirect()
+                ->back()
+                ->with(
+                    'clinical_plan_success',
+                    'The clinical assessment was saved successfully.'
+                );
+        }
+
+       
+        public function getTemplateData($templateId, Request $request)
        {
         $selectedEncouterMedicalHistroy = TemplateMedicalHistory::where('template_id', $templateId)->get();
         $selectedTemplatePrescription = TemplatePrescription::where('template_id', $templateId)->get();

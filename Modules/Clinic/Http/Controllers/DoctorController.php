@@ -1424,6 +1424,8 @@ class DoctorController extends Controller
             unset($request_data['gmc_number']);
         }
 
+        $oldGmcNumber = $user->gmc_number;
+
         $request_data['mobile'] = str_replace(' ', '', $request_data['mobile']);
         
         // Handle custom state/city entries with duplicate prevention
@@ -1456,6 +1458,11 @@ class DoctorController extends Controller
         }
         
         $data->update($request_data);
+
+         if ($oldGmcNumber !== $user->gmc_number) {
+            // A verification for the old number is no longer valid.
+            $user->gmcVerification?->delete();
+        }
 
         // Profile info
         $profile = [

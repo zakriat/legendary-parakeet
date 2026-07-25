@@ -13,6 +13,8 @@ use Modules\Clinic\Http\Controllers\ReceptionistController;
 use Modules\Clinic\Http\Controllers\NurseController;
 use Modules\Clinic\Http\Controllers\SystemServiceController;
 
+use Modules\Clinic\Http\Controllers\DoctorGmcVerificationController;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -182,6 +184,49 @@ Route::group(['prefix' => 'app', 'as' => 'backend.', 'middleware' => ['auth','au
         Route::get('get-clinics', [DoctorController::class, 'getClinics'])->name('get-clinics');
         Route::get('get-vendors', [DoctorController::class, 'getVendors'])->name('get-vendors');
 
+        Route::prefix('{userId}/gmc-verification')
+        ->as('gmc.')
+        ->group(function () {
+            Route::get(
+                '/',
+                [
+                    DoctorGmcVerificationController::class,
+                    'show',
+                ]
+            )->name('show');
+
+            Route::post(
+                '/begin',
+                [
+                    DoctorGmcVerificationController::class,
+                    'begin',
+                ]
+            )->name('begin');
+
+            Route::post(
+                '/confirm',
+                [
+                    DoctorGmcVerificationController::class,
+                    'confirm',
+                ]
+            )->name('confirm');
+
+            Route::post(
+                '/certificate',
+                [
+                    DoctorGmcVerificationController::class,
+                    'uploadCertificate',
+                ]
+            )->name('certificate.upload');
+
+            Route::get(
+                '/certificate',
+                [
+                    DoctorGmcVerificationController::class,
+                    'downloadCertificate',
+                ]
+            )->name('certificate.download');
+        });
     });
     Route::get('doctors-review', [DoctorController::class, 'review'])->name('doctors.review');
     Route::get('employees-review', [DoctorController::class, 'review'])->name('employees.review');

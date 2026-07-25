@@ -426,6 +426,8 @@
                                         <textarea class="form-control" id="appointment_extra_info" name="appointment_extra_info" 
                                                   placeholder="{{ __('frontend.enter_medical_history') }}" rows="6"
                                                   style="transition: all 0.3s ease;"></textarea>
+
+                                        
                                         
                                         <!-- Hidden field for audio transcription IDs -->
                                         <input type="hidden" id="audio_transcription_ids" name="audio_transcription_ids" value="">
@@ -435,6 +437,269 @@
                                             Record your voice above or type directly. AI will enhance medical terminology automatically.
                                         </small>
                                     </div>
+
+                                    <!-- new appointment data -->
+                                    
+                                <div id="patient-clinical-history" class="mt-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Structured Medical History</h5>
+                                    </div>
+
+                                    <div class="card-body">
+                                        <h6>Medical conditions</h6>
+
+                                        @foreach([
+                                            'Diabetes',
+                                            'Hypertension',
+                                            'Heart disease',
+                                            'Stroke'
+                                        ] as $index => $condition)
+                                            <div class="form-check mb-2">
+                                                <input
+                                                    type="checkbox"
+                                                    class="form-check-input"
+                                                    id="condition-{{ $index }}"
+                                                    name="conditions[{{ $index }}][condition_name]"
+                                                    value="{{ $condition }}"
+                                                >
+
+                                                <label
+                                                    class="form-check-label"
+                                                    for="condition-{{ $index }}"
+                                                >
+                                                    {{ $condition }}
+                                                </label>
+                                            </div>
+                                        @endforeach
+
+                                        <input
+                                            type="text"
+                                            class="form-control mt-2"
+                                            name="conditions[4][condition_name]"
+                                            placeholder="Other medical condition"
+                                        >
+
+                                        <hr>
+
+                                        <h6>Current medication</h6>
+
+                                        <div class="row g-2">
+                                            <div class="col-md-4">
+                                                <input
+                                                    type="text"
+                                                    class="form-control"
+                                                    name="medications[0][medication_name]"
+                                                    placeholder="Medication name"
+                                                >
+                                            </div>
+
+                                            <div class="col-md-2">
+                                                <input
+                                                    type="text"
+                                                    class="form-control"
+                                                    name="medications[0][dose]"
+                                                    placeholder="Dose"
+                                                >
+                                            </div>
+
+                                            <div class="col-md-3">
+                                                <input
+                                                    type="text"
+                                                    class="form-control"
+                                                    name="medications[0][frequency]"
+                                                    placeholder="Frequency"
+                                                >
+                                            </div>
+
+                                            <div class="col-md-3">
+                                                <input
+                                                    type="text"
+                                                    class="form-control"
+                                                    name="medications[0][notes]"
+                                                    placeholder="Notes"
+                                                >
+                                            </div>
+                                        </div>
+
+                                        <hr>
+
+                                        <h6>Allergies</h6>
+
+                                        <div class="row g-2">
+                                            <div class="col-md-4">
+                                                <input
+                                                    type="text"
+                                                    class="form-control"
+                                                    name="allergies[0][allergen]"
+                                                    placeholder="Allergy"
+                                                >
+                                            </div>
+
+                                            <div class="col-md-4">
+                                                <input
+                                                    type="text"
+                                                    class="form-control"
+                                                    name="allergies[0][reaction]"
+                                                    placeholder="Reaction"
+                                                >
+                                            </div>
+
+                                            <div class="col-md-4">
+                                                <select
+                                                    class="form-select"
+                                                    name="allergies[0][severity]"
+                                                >
+                                                    <option value="unknown">Unknown severity</option>
+                                                    <option value="mild">Mild</option>
+                                                    <option value="moderate">Moderate</option>
+                                                    <option value="severe">Severe</option>
+                                                    <option value="life_threatening">
+                                                        Life threatening
+                                                    </option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <hr>
+
+                                        <h6>Social history</h6>
+
+                                        <div class="row g-2">
+                                            <div class="col-md-3">
+                                                <label class="form-label">Smoking</label>
+
+                                                <select
+                                                    class="form-select"
+                                                    name="social_history[smoking_status]"
+                                                >
+                                                    <option value="never">Never</option>
+                                                    <option value="current">Current smoker</option>
+                                                    <option value="former">Former smoker</option>
+                                                    <option value="unknown">Unknown</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="col-md-3">
+                                                <label class="form-label">Cigarettes/day</label>
+
+                                                <input
+                                                    type="number"
+                                                    class="form-control"
+                                                    name="social_history[cigarettes_per_day]"
+                                                    min="0"
+                                                >
+                                            </div>
+
+                                            <div class="col-md-3">
+                                                <label class="form-label">Alcohol</label>
+
+                                                <select
+                                                    class="form-select"
+                                                    name="social_history[alcohol_status]"
+                                                >
+                                                    <option value="none">None</option>
+                                                    <option value="current">Currently drinks</option>
+                                                    <option value="former">Formerly drank</option>
+                                                    <option value="unknown">Unknown</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="col-md-3">
+                                                <label class="form-label">Units/week</label>
+
+                                                <input
+                                                    type="number"
+                                                    step="0.1"
+                                                    class="form-control"
+                                                    name="social_history[alcohol_units_per_week]"
+                                                    min="0"
+                                                >
+                                            </div>
+                                        </div>
+
+                                        <hr>
+
+                                        <h6>Family history</h6>
+
+                                        <div class="row g-2">
+                                            <div class="col-md-4">
+                                                <input
+                                                    type="text"
+                                                    class="form-control"
+                                                    name="family_history[0][relationship]"
+                                                    placeholder="Relationship"
+                                                >
+                                            </div>
+
+                                            <div class="col-md-4">
+                                                <input
+                                                    type="text"
+                                                    class="form-control"
+                                                    name="family_history[0][condition_name]"
+                                                    placeholder="Condition"
+                                                >
+                                            </div>
+
+                                            <div class="col-md-4">
+                                                <input
+                                                    type="number"
+                                                    class="form-control"
+                                                    name="family_history[0][age_at_diagnosis]"
+                                                    placeholder="Age at diagnosis"
+                                                >
+                                            </div>
+                                        </div>
+
+                                        <hr>
+
+                                        <h6>Observations</h6>
+
+                                        <div class="row g-2">
+                                            <div class="col-md-3">
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    class="form-control"
+                                                    name="observations[height_cm]"
+                                                    placeholder="Height cm"
+                                                >
+                                            </div>
+
+                                            <div class="col-md-3">
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    class="form-control"
+                                                    name="observations[weight_kg]"
+                                                    placeholder="Weight kg"
+                                                >
+                                            </div>
+
+                                            <div class="col-md-3">
+                                                <input
+                                                    type="number"
+                                                    class="form-control"
+                                                    name="observations[systolic]"
+                                                    placeholder="Systolic BP"
+                                                >
+                                            </div>
+
+                                            <div class="col-md-3">
+                                                <input
+                                                    type="number"
+                                                    class="form-control"
+                                                    name="observations[diastolic]"
+                                                    placeholder="Diastolic BP"
+                                                >
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                                    <!-- new data ends -->
+
                                 </div>
 
                                 <!-- Upload Medical Report Section -->

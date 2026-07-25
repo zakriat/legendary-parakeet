@@ -24,6 +24,8 @@ use Modules\Clinic\Models\Doctor;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
+use Illuminate\Database\Eloquent\Relations\HasOne;
+
 class PatientEncounter extends BaseModel
 {
     use HasFactory;
@@ -72,6 +74,15 @@ class PatientEncounter extends BaseModel
     {
         //return PatientEncounterFactory::new();
     }
+
+    public function clinicalPlan(): HasOne
+    {
+        return $this->hasOne(
+            EncounterClinicalPlan::class,
+            'encounter_id'
+        );
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
@@ -211,4 +222,48 @@ class PatientEncounter extends BaseModel
     {
         return $this->hasMany(AppointmentPatientBodychart::class, 'encounter_id');
     }
+
+
+    // new data from appointment
+
+        public function patientConditions()
+    {
+        return $this->hasMany(PatientCondition::class, 'encounter_id');
+    }
+
+    public function patientMedications()
+    {
+        return $this->hasMany(PatientMedication::class, 'encounter_id');
+    }
+
+    public function patientAllergies()
+    {
+        return $this->hasMany(PatientAllergy::class, 'encounter_id');
+    }
+
+    public function patientSocialHistories()
+    {
+        return $this->hasMany(
+            PatientSocialHistory::class,
+            'encounter_id'
+        );
+    }
+
+    public function patientFamilyHistories()
+    {
+        return $this->hasMany(
+            PatientFamilyHistory::class,
+            'encounter_id'
+        );
+    }
+
+    public function patientObservations()
+    {
+        return $this->hasMany(
+            PatientObservation::class,
+            'encounter_id'
+        );
+    }
+
+    // new data ends
 }

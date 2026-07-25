@@ -37,6 +37,9 @@ use Modules\Clinic\Models\DoctorSession;
 use Illuminate\Support\Facades\DB;
 use App\Models\Traits\Auditable;
 
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Modules\Clinic\Models\DoctorGmcVerification;
+
 
 class User extends Authenticatable implements HasMedia, MustVerifyEmail
 {
@@ -126,6 +129,17 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     //         set: fn ($value) =>  encrypt($value),
     //     );
     // }
+
+
+    // gmc check
+
+    public function gmcVerification(): HasOne
+    {
+        return $this->hasOne(
+            DoctorGmcVerification::class,
+            'doctor_user_id'
+        );
+    }
 
     public function getFullNameAttribute() // notice that the attribute name is in CamelCase.
     {

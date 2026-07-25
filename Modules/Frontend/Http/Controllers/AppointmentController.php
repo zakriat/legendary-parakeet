@@ -2,6 +2,7 @@
 
 namespace Modules\Frontend\Http\Controllers;
 
+use Modules\Appointment\Services\PatientClinicalHistoryService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -316,7 +317,23 @@ class AppointmentController extends Controller
 
     public function appointmentDetails($id)
     {
-        $appointment = Appointment::setRole(auth()->user())->with('appointmenttransaction', 'clinicservice', 'serviceRating', 'patientEncounter', 'cliniccenter', 'bodyChart')->where('id', $id)->first();
+        $appointment = Appointment::setRole(auth()->user())->with('appointmenttransaction', 'clinicservice', 
+                        'serviceRating', 'patientEncounter', 'cliniccenter', 'bodyChart',
+                        'patientConditions',
+                        'patientMedications',
+                        'patientAllergies',
+                        'patientSocialHistories',
+                        'patientFamilyHistories',
+                        'patientObservations',)->where('id', $id)->first();
+
+        $appointment->load([
+        'patientConditions',
+        'patientMedications',
+        'patientAllergies',
+        'patientSocialHistories',
+        'patientFamilyHistories',
+        'patientObservations',
+    ]);
 
         if (!$appointment) {
             return redirect()->route('appointment-list')->with('error', 'Appointment not found!');
@@ -923,10 +940,126 @@ class AppointmentController extends Controller
     public function saveAppointment(Request $request)
     {
 
+        // new data starts
+            $clinicalHistory = $request->validate([
+        'conditions' => ['nullable', 'array'],
+        'conditions.*.condition_name' => [
+            'required',
+            'string',
+            'max:255',
+        ],
+        'conditions.*.diagnosed_at' => ['nullable', 'date'],
+        'conditions.*.status' => [
+            'nullable',
+            'in:active,resolved,in_remission,unknown',
+        ],
+        'conditions.*.notes' => ['nullable', 'string', 'max:5000'],
+
+        'medications' => ['nullable', 'array'],
+        'medications.*.medication_name' => [
+            'required',
+            'string',
+            'max:255',
+        ],
+        'medications.*.dose' => ['nullable', 'string', 'max:100'],
+        'medications.*.frequency' => [
+            'nullable',
+            'string',
+            'max:100',
+        ],
+        'medications.*.route' => ['nullable', 'string', 'max:100'],
+        'medications.*.notes' => ['nullable', 'string', 'max:5000'],
+
+        'allergies' => ['nullable', 'array'],
+        'allergies.*.allergen' => ['required', 'string', 'max:255'],
+        'allergies.*.reaction' => ['nullable', 'string', 'max:255'],
+        'allergies.*.severity' => [
+            'nullable',
+            'in:unknown,mild,moderate,severe,life_threatening',
+        ],
+
+        'social_history' => ['nullable', 'array'],
+        'social_history.smoking_status' => [
+            'nullable',
+            'in:never,current,former,unknown',
+        ],
+        'social_history.cigarettes_per_day' => [
+            'nullable',
+            'integer',
+            'min:0',
+            'max:200',
+        ],
+        'social_history.alcohol_status' => [
+            'nullable',
+            'in:none,current,former,unknown',
+        ],
+        'social_history.alcohol_units_per_week' => [
+            'nullable',
+            'numeric',
+            'min:0',
+            'max:500',
+        ],
+
+        'family_history' => ['nullable', 'array'],
+        'family_history.*.relationship' => [
+            'required',
+            'string',
+            'max:100',
+        ],
+        'family_history.*.condition_name' => [
+            'required',
+            'string',
+            'max:255',
+        ],
+        'family_history.*.age_at_diagnosis' => [
+            'nullable',
+            'integer',
+            'min:0',
+            'max:130',
+        ],
+
+        'observations' => ['nullable', 'array'],
+        'observations.height_cm' => [
+            'nullable',
+            'numeric',
+            'min:30',
+            'max:300',
+        ],
+        'observations.weight_kg' => [
+            'nullable',
+            'numeric',
+            'min:1',
+            'max:700',
+        ],
+        'observations.systolic' => [
+            'nullable',
+            'integer',
+            'min:40',
+            'max:300',
+        ],
+        'observations.diastolic' => [
+            'nullable',
+            'integer',
+            'min:20',
+            'max:200',
+        ],
+    ]);
+
 
         $doctor = Doctor::CheckMultivendor()->where('id', $request->selectedDoctor)->where('status', 1)->first();
         $request['doctor_id'] = $doctor->doctor_id;
-        $data = $request->all();
+        // $data = $request->all();
+
+        // new data starts
+        $data = $request->except([
+            'conditions',
+            'medications',
+            'allergies',
+            'social_history',
+            'family_history',
+            'observations',
+        ]);
+
         $currency = Currency::where('is_primary', 1)->first();
         $currencySymbol = $currency ? $currency->currency_symbol : '$';
 
@@ -955,8 +1088,63 @@ class AppointmentController extends Controller
         $data['status'] = $data['status'] ? $data['status'] : 'confirmed';
         $data['advance_payment_status'] = $request->input('advance_payment_status');
         $service = ClinicsService::where('id', $data['service_id'])->first();
+
+
         $data['clinic_name'] = $service->ClinicServiceMapping->first()->center->name;
         $data['is_enable_advance_payment'] = $service->is_enable_advance_payment;
+
+        
+        /*
+|--------------------------------------------------------------------------
+| Clinic map and directions information
+|--------------------------------------------------------------------------
+*/
+
+$selectedClinic = Clinics::find($data['clinic_id']);
+
+$clinicName = $data['clinic_name'] ?? '';
+$clinicAddress = '';
+$clinicPhone = '';
+$mapUrl = '';
+$mapEmbedUrl = '';
+
+if ($selectedClinic) {
+    $clinicName = $selectedClinic->name ?? $clinicName;
+
+    $clinicAddress = collect([
+        $selectedClinic->address,
+        $selectedClinic->pincode,
+    ])->filter()->implode(', ');
+
+    $clinicPhone = $selectedClinic->contact_number ?? '';
+
+    $latitude = $selectedClinic->latitude;
+    $longitude = $selectedClinic->longitude;
+
+    // Use coordinates when available because they provide the exact location.
+    if (!empty($latitude) && !empty($longitude)) {
+        $destination = $latitude . ',' . $longitude;
+
+        $mapUrl = 'https://www.google.com/maps/dir/?api=1&destination=' .
+            urlencode($destination);
+
+        $mapEmbedUrl = 'https://www.google.com/maps?q=' .
+            urlencode($destination) .
+            '&output=embed';
+    } elseif (!empty($clinicAddress)) {
+        // Fall back to the clinic address.
+        $mapUrl = 'https://www.google.com/maps/dir/?api=1&destination=' .
+            urlencode($clinicAddress);
+
+        $mapEmbedUrl = 'https://www.google.com/maps?q=' .
+            urlencode($clinicAddress) .
+            '&output=embed';
+    }
+}
+
+$data['clinic_name'] = $clinicName;
+        
+
         $data['formate_appointment_date'] = DateFormate($data['appointment_date']);
         $data['appointment_extra_info' ] = $request->input('appointment_extra_info');
 
@@ -978,8 +1166,60 @@ class AppointmentController extends Controller
             $data['payment_status'] = 1;
             $data['payble_amount'] = $data['total_amount'];
         }
-        $paymentData = $data;
-        $data = Appointment::create($data);
+        // $paymentData = $data;
+        // $data = Appointment::create($data);
+
+        /*
+|--------------------------------------------------------------------------
+| Create appointment and prepare payment response
+|--------------------------------------------------------------------------
+*/
+
+// Preserve the original appointment/payment values.
+$appointmentData = $data;
+
+// $data = Appointment::create($data);
+$data = Appointment::create($appointmentData);
+
+app(\Modules\Appointment\Services\PatientClinicalHistoryService::class)
+    ->storeBookingData(
+        $data,
+        $request->only([
+            'conditions',
+            'medications',
+            'allergies',
+            'social_history',
+            'family_history',
+            'observations',
+        ])
+    );
+
+// Insert only the appointment fields into the database.
+// $data = Appointment::create($appointmentData);
+
+// Add display-only map information to paymentData after the appointment
+// has been inserted.
+$paymentData = array_merge($appointmentData, [
+    'id' => $data->id,
+
+    'selectedServiceName' => $request->selectedServiceName,
+    'selectedDoctorName' => $request->selectedDoctorName,
+
+    'doctor_name' => optional($doctor->user)->full_name,
+    'doctor_expert' => optional(optional($doctor->user)->profile)->expert ?? '',
+
+    'service_name' => $request->selectedServiceName,
+    'clinic_name' => $clinicName,
+
+    'clinic_address' => $clinicAddress,
+    'clinic_phone' => $clinicPhone,
+    'map_url' => $mapUrl,
+    'map_embed_url' => $mapEmbedUrl,
+    'arrival_note' => 'Please arrive 10 minutes early.',
+
+    'currency_symbol' => $currencySymbol,
+]);
+
         $is_telemet = ClinicsService::where('id', $data['service_id'])->pluck('is_video_consultancy')->first();
         if ($is_telemet == 1) {
             $setting = Setting::where('name', 'google_meet_method')->orwhere('name', 'is_zoom')->first();
@@ -2713,6 +2953,42 @@ class AppointmentController extends Controller
         $selectedDoctor = null;
         $doctorId = $paymentData['doctor_id'];
         $selectedClinic = Clinics::CheckMultivendor()->findOrFail($clinicId);
+
+                // Clinic location/contact information for the confirmation card
+        $clinicAddress = collect([
+            $selectedClinic->address,
+            $selectedClinic->pincode,
+        ])->filter()->implode(', ');
+
+        $clinicPhone = $selectedClinic->contact_number;
+        $clinicLatitude = $selectedClinic->latitude;
+        $clinicLongitude = $selectedClinic->longitude;
+
+        // Prefer coordinates because they point to the exact clinic location.
+        if (!empty($clinicLatitude) && !empty($clinicLongitude)) {
+            $mapDestination = $clinicLatitude . ',' . $clinicLongitude;
+
+            $mapUrl = 'https://www.google.com/maps/dir/?api=1&destination=' .
+                urlencode($mapDestination);
+
+            $mapEmbedUrl = 'https://www.google.com/maps?q=' .
+                urlencode($mapDestination) .
+                '&output=embed';
+        } elseif (!empty($clinicAddress)) {
+            // Fall back to the clinic address when coordinates are unavailable.
+            $mapUrl = 'https://www.google.com/maps/dir/?api=1&destination=' .
+                urlencode($clinicAddress);
+
+            $mapEmbedUrl = 'https://www.google.com/maps?q=' .
+                urlencode($clinicAddress) .
+                '&output=embed';
+        } else {
+            $mapUrl = '';
+            $mapEmbedUrl = '';
+        }
+
+        $arrivalNote = 'Please arrive 10 minutes early for check-in.';
+
         $selectedDoctor = Doctor::CheckMultivendor()->with('user')->where('doctor_id', $doctorId)->first();
         $doctorId = $selectedDoctor->id;
         $currentStep = 2;
@@ -2723,23 +2999,46 @@ class AppointmentController extends Controller
             ['index' => 2, 'label' => __('frontend.choose_date_time_payment'), 'value' => 'Choose Date, Time, Payment'],
         ];
 
-  $clinicAddress = collect([
-    optional($selectedClinic)->address,
-    optional($selectedClinic)->pincode,
-])->filter()->implode(', ');
+//   $clinicAddress = collect([
+//     optional($selectedClinic)->address,
+//     optional($selectedClinic)->pincode,
+// ])->filter()->implode(', ');
 
-$mapUrl = '';
+// $mapUrl = '';
 
-if (
-    !empty($selectedClinic->latitude) &&
-    !empty($selectedClinic->longitude)
-) {
-    $mapUrl = 'https://www.google.com/maps/dir/?api=1&destination=' .
-        $selectedClinic->latitude . ',' .
-        $selectedClinic->longitude;
-}
+// if (
+//     !empty($selectedClinic->latitude) &&
+//     !empty($selectedClinic->longitude)
+// ) {
+//     $mapUrl = 'https://www.google.com/maps/dir/?api=1&destination=' .
+//         $selectedClinic->latitude . ',' .
+//         $selectedClinic->longitude;
+// }
 
-$clinicPhone = optional($selectedClinic)->contact_number;
+// $clinicPhone = optional($selectedClinic)->contact_number;
+
+                // / Build clinic address from fields available on the Clinics model
+        // $clinicAddress = collect([
+        //     optional($selectedClinic)->address,
+        //     optional($selectedClinic)->pincode,
+        // ])->filter()->implode(', ');
+
+        // $clinicPhone     = optional($selectedClinic)->contact_number;
+        // $clinicLatitude  = optional($selectedClinic)->latitude;
+        // $clinicLongitude = optional($selectedClinic)->longitude;
+
+        // // Prefer lat/long directions (accurate pin), fall back to address search
+        // if (!empty($clinicLatitude) && !empty($clinicLongitude)) {
+        //     $mapUrl = 'https://www.google.com/maps/dir/?api=1&destination=' .
+        //         $clinicLatitude . ',' . $clinicLongitude;
+        // } elseif (!empty($clinicAddress)) {
+        //     $mapUrl = 'https://www.google.com/maps/dir/?api=1&destination=' . urlencode($clinicAddress);
+        // } else {
+        //     $mapUrl = '';
+        // }
+
+        // // Arrival reminder for the confirmation card
+        // $arrivalNote = 'Please arrive 10 minutes early for check-in.';
 
         $paymentDetails = [
             'message' => 'Great, Payment Successful!',
@@ -2758,9 +3057,9 @@ $clinicPhone = optional($selectedClinic)->contact_number;
             'totalAmount' => isset($amountTotal) ? number_format($amountTotal, 2) : '',
             'currency' => $currency ? $currency->currency_symbol : 'USD',
 
-            'patientName' => $appointment->user->first_name.' '.$appointment->user->last_name,
+            // 'patientName' => $appointment->user->first_name.' '.$appointment->user->last_name,
 
-            'clinicAddress' => $appointment->cliniccenter->address,
+            // 'clinicAddress' => $appointment->cliniccenter->address,
 
             // 'postcode' => $appointment->cliniccenter->postcode,
 
@@ -2779,11 +3078,18 @@ $clinicPhone = optional($selectedClinic)->contact_number;
             // : 'https://www.google.com/maps/search/?api=1&query='.
             // urlencode($appointment->cliniccenter->address),
 
-            'clinicAddress' => $clinicAddress,
-            'clinicPhone' => $clinicPhone,
-            'clinicLatitude' => $clinicLatitude,
-            'clinicLongitude' => $clinicLongitude,
-            'mapUrl' => $mapUrl,
+            // 'clinicAddress' => $clinicAddress,
+            // 'clinicPhone' => $clinicPhone,
+            // 'clinicLatitude' => $clinicLatitude,
+            // 'clinicLongitude' => $clinicLongitude,
+            // 'mapUrl' => $mapUrl,
+'clinicAddress' => $clinicAddress,
+'clinicPhone' => $clinicPhone,
+'clinicLatitude' => $clinicLatitude,
+'clinicLongitude' => $clinicLongitude,
+'mapUrl' => $mapUrl,
+'mapEmbedUrl' => $mapEmbedUrl,
+'arrivalNote' => $arrivalNote,
 
         ];
 

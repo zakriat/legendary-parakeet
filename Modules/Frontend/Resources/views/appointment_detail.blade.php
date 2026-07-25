@@ -689,6 +689,171 @@
                     </div>
                     @endif
 
+                    @if(
+    $appointment->patientConditions->isNotEmpty() ||
+    $appointment->patientMedications->isNotEmpty() ||
+    $appointment->patientAllergies->isNotEmpty() ||
+    $appointment->patientSocialHistories->isNotEmpty() ||
+    $appointment->patientFamilyHistories->isNotEmpty() ||
+    $appointment->patientObservations->isNotEmpty()
+)
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">{{ __('Patient Clinical Information') }}</h5>
+        </div>
+
+        <div class="card-body">
+            @if($appointment->patientConditions->isNotEmpty())
+                <div class="mb-4">
+                    <h6>{{ __('Medical Conditions') }}</h6>
+
+                    <ul class="mb-0">
+                        @foreach($appointment->patientConditions as $condition)
+                            <li>
+                                {{ $condition->condition_name }}
+
+                                @if($condition->notes)
+                                    — {{ $condition->notes }}
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            @if($appointment->patientMedications->isNotEmpty())
+                <div class="mb-4">
+                    <h6>{{ __('Medications') }}</h6>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('Medication') }}</th>
+                                    <th>{{ __('Dosage') }}</th>
+                                    <th>{{ __('Frequency') }}</th>
+                                    <th>{{ __('Notes') }}</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @foreach($appointment->patientMedications as $medication)
+                                    <tr>
+                                        <td>{{ $medication->medication_name }}</td>
+                                        <td>{{ $medication->dosage ?: '—' }}</td>
+                                        <td>{{ $medication->frequency ?: '—' }}</td>
+                                        <td>{{ $medication->notes ?: '—' }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            @endif
+
+            @if($appointment->patientAllergies->isNotEmpty())
+                <div class="mb-4">
+                    <h6>{{ __('Allergies') }}</h6>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('Allergen') }}</th>
+                                    <th>{{ __('Reaction') }}</th>
+                                    <th>{{ __('Severity') }}</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @foreach($appointment->patientAllergies as $allergy)
+                                    <tr>
+                                        <td>{{ $allergy->allergen }}</td>
+                                        <td>{{ $allergy->reaction ?: '—' }}</td>
+                                        <td>{{ ucfirst($allergy->severity ?: 'unknown') }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            @endif
+
+            @foreach($appointment->patientSocialHistories as $socialHistory)
+                <div class="mb-4">
+                    <h6>{{ __('Social History') }}</h6>
+
+                    <p class="mb-1">
+                        <strong>{{ __('Smoking') }}:</strong>
+                        {{ ucfirst($socialHistory->smoking_status ?: 'Not provided') }}
+                    </p>
+
+                    <p class="mb-1">
+                        <strong>{{ __('Alcohol') }}:</strong>
+                        {{ ucfirst($socialHistory->alcohol_status ?: 'Not provided') }}
+                    </p>
+
+                    @if($socialHistory->notes)
+                        <p class="mb-0">
+                            <strong>{{ __('Other') }}:</strong>
+                            {{ $socialHistory->notes }}
+                        </p>
+                    @endif
+                </div>
+            @endforeach
+
+            @if($appointment->patientFamilyHistories->isNotEmpty())
+                <div class="mb-4">
+                    <h6>{{ __('Family History') }}</h6>
+
+                    <ul class="mb-0">
+                        @foreach($appointment->patientFamilyHistories as $familyHistory)
+                            <li>
+                                {{ $familyHistory->relationship ?: __('Family member') }}:
+                                {{ $familyHistory->condition_name }}
+
+                                @if($familyHistory->notes)
+                                    — {{ $familyHistory->notes }}
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            @foreach($appointment->patientObservations as $observation)
+                <div class="mb-4">
+                    <h6>{{ __('Observations') }}</h6>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-2">
+                            <strong>{{ __('Height') }}:</strong>
+                            {{ $observation->height ? $observation->height . ' cm' : '—' }}
+                        </div>
+
+                        <div class="col-md-4 mb-2">
+                            <strong>{{ __('Weight') }}:</strong>
+                            {{ $observation->weight ? $observation->weight . ' kg' : '—' }}
+                        </div>
+
+                        <div class="col-md-4 mb-2">
+                            <strong>{{ __('Blood pressure') }}:</strong>
+                            {{ $observation->blood_pressure ?: '—' }}
+                        </div>
+
+                        @if($observation->notes)
+                            <div class="col-12">
+                                <strong>{{ __('Notes') }}:</strong>
+                                {{ $observation->notes }}
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
+@endif
+
                     @if ($appointment->status == 'checkout' || $appointment->status == 'check_in')
                         <div class="mt-5 pt-3">
                             <div class="d-flex align-items-center justify-content-between gap-3 section-bg p-3 rounded">

@@ -61,6 +61,7 @@ class DoctorRequest extends FormRequest
             'mobile.required' => 'Contact number is required.',
             'gmc_number.unique' => 'This GMC number is already assigned to another doctor.',
             'gmc_number.max' => 'The GMC number may not be greater than 30 characters.',
+            'gmc_number.regex' => 'The GMC number must contain exactly seven digits.',
         ];
     }
 

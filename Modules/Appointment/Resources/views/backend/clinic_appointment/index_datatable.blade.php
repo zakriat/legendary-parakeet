@@ -697,6 +697,23 @@
                 });
         }
         
+
+            // new data for appointmets
+            function escapeClinicalHtml(value) {
+            const element = document.createElement('div')
+            element.textContent = value == null ? '' : String(value)
+            return element.innerHTML
+            }
+
+            function escapeHtml(value) {
+            return String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;')
+            }
+
         function renderAppointmentDetails(data) {
             const patientName = data.other_patient ? data.other_patient.name : data.patient.name;
             const patientEmail = data.other_patient ? data.other_patient.email : data.patient.email;
@@ -897,6 +914,132 @@
                     ` : ''}
                 </div>
             `;
+            const clinical = data.clinical_history || {}
+
+const conditions = clinical.conditions || []
+const medications = clinical.medications || []
+const allergies = clinical.allergies || []
+const familyHistory = clinical.family_history || []
+const observations = clinical.observations || []
+const social = clinical.social_history || null
+
+html += `
+  <div class="row mt-3">
+    <div class="col-12">
+      <div class="detail-card">
+        <h6>
+          <i class="ph ph-first-aid me-2"></i>
+          Structured Clinical History
+        </h6>
+
+        ${allergies.length > 0 ? `
+          <div class="alert alert-danger">
+            <strong>Allergy warning</strong>
+
+            ${allergies.map(item => `
+              <div>
+                ${escapeClinicalHtml(item.allergen)}
+                ${item.reaction
+                  ? `— ${escapeClinicalHtml(item.reaction)}`
+                  : ''
+                }
+                (${escapeClinicalHtml(item.severity)})
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+
+        <div class="row">
+          <div class="col-md-6">
+            <h6>Conditions</h6>
+
+            ${conditions.length > 0
+              ? conditions.map(item => `
+                  <p class="mb-1">
+                    <strong>
+                      ${escapeClinicalHtml(item.condition_name)}
+                    </strong>
+                    — ${escapeClinicalHtml(item.status)}
+                  </p>
+                `).join('')
+              : '<p class="text-muted">No conditions recorded.</p>'
+            }
+          </div>
+
+          <div class="col-md-6">
+            <h6>Medication</h6>
+
+            ${medications.length > 0
+              ? medications.map(item => `
+                  <p class="mb-1">
+                    <strong>
+                      ${escapeClinicalHtml(item.medication_name)}
+                    </strong>
+                    ${item.dose
+                      ? escapeClinicalHtml(item.dose)
+                      : ''
+                    }
+                    ${item.frequency
+                      ? `— ${escapeClinicalHtml(item.frequency)}`
+                      : ''
+                    }
+                  </p>
+                `).join('')
+              : '<p class="text-muted">No medications recorded.</p>'
+            }
+          </div>
+
+          <div class="col-md-6 mt-3">
+            <h6>Social history</h6>
+
+            ${social ? `
+              <p class="mb-1">
+                Smoking:
+                ${escapeClinicalHtml(social.smoking_status)}
+              </p>
+
+              <p class="mb-1">
+                Alcohol:
+                ${escapeClinicalHtml(social.alcohol_status)}
+              </p>
+            ` : '<p class="text-muted">No social history.</p>'}
+          </div>
+
+          <div class="col-md-6 mt-3">
+            <h6>Family history</h6>
+
+            ${familyHistory.length > 0
+              ? familyHistory.map(item => `
+                  <p class="mb-1">
+                    <strong>
+                      ${escapeClinicalHtml(item.relationship)}:
+                    </strong>
+                    ${escapeClinicalHtml(item.condition_name)}
+                  </p>
+                `).join('')
+              : '<p class="text-muted">No family history.</p>'
+            }
+          </div>
+
+          <div class="col-12 mt-3">
+            <h6>Observations</h6>
+
+            ${observations.length > 0 ? `
+              <p>
+                Height: ${observations[0].height_cm || '—'} cm |
+                Weight: ${observations[0].weight_kg || '—'} kg |
+                BMI: ${observations[0].bmi || '—'} |
+                BP:
+                ${observations[0].systolic || '—'}/
+                ${observations[0].diastolic || '—'}
+              </p>
+            ` : '<p class="text-muted">No observations recorded.</p>'}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+`
             
             return html;
         }

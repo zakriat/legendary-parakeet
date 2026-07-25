@@ -218,6 +218,14 @@ Route::group(['prefix' => 'app', 'as' => 'backend.', 'middleware' => ['auth','au
 
         Route::get('encounter-detail-page/{id}', [PatientEncounterController::class, 'EncouterDetailPage'])->name('encounter-detail-page');
         
+        Route::post(
+            'encounter-detail-page/{id}/clinical-plan',
+            [
+                PatientEncounterController::class,
+                'saveClinicalPlan',
+            ]
+        )->name('encounter.save-clinical-plan');
+
         Route::get('encounter-detail-page/services/index_list', [ClinicsServiceController::class, 'index_list'])->name("index_list");
         Route::get('encounter-detail-page/clinics/index_list', [ClinicesController::class, 'index_list'])->name('index_list');
         Route::get('encounter-detail-page/customers/index_list', [CustomersController::class, 'index_list'])->name('index_list');

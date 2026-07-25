@@ -9,6 +9,17 @@
             title="{{ __('clinic.session') }}">
         <i class="ph ph-clock-user"></i>
     </button>
+   
+    <button
+        type="button"
+        class="btn text-info p-0 fs-6"
+        title="GMC verification"
+        onclick="openGmcVerificationModal(
+            {{ $data->id }}
+        )"
+    >
+        <i class="ph ph-identification-card"></i>
+    </button>
 
 
 

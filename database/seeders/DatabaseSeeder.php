@@ -47,6 +47,9 @@ class DatabaseSeeder extends Seeder
         $this->call(\Modules\Wallet\database\seeders\WalletDatabaseSeeder::class);
         $this->call(\Modules\FAQ\database\seeders\FAQDatabaseSeeder::class);
         $this->call(\Modules\FrontendSetting\database\seeders\FrontendSettingDatabaseSeeder::class);
+        $this->call([
+            ClinicalBookingStatusSeeder::class,
+        ]);
 
 
         Schema::enableForeignKeyConstraints();

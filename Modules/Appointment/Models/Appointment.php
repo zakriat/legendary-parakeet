@@ -58,6 +58,50 @@ class Appointment extends BaseModel
      *
      * @return \Illuminate\Database\Eloquent\Factories\Factory
      */
+
+    // new data for appointment
+
+        public function patientConditions()
+    {
+        return $this->hasMany(PatientCondition::class, 'appointment_id');
+    }
+
+    public function patientMedications()
+    {
+        return $this->hasMany(PatientMedication::class, 'appointment_id');
+    }
+
+    public function patientAllergies()
+    {
+        return $this->hasMany(PatientAllergy::class, 'appointment_id');
+    }
+
+    public function patientSocialHistories()
+    {
+        return $this->hasMany(
+            PatientSocialHistory::class,
+            'appointment_id'
+        );
+    }
+
+    public function patientFamilyHistories()
+    {
+        return $this->hasMany(
+            PatientFamilyHistory::class,
+            'appointment_id'
+        );
+    }
+
+    public function patientObservations()
+    {
+        return $this->hasMany(
+            PatientObservation::class,
+            'appointment_id'
+        );
+    }
+
+    // new data ends
+
     protected static function newFactory()
     {
         return \Modules\Appointment\database\factories\AppointmentFactory::new();

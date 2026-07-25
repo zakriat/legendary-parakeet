@@ -1,6 +1,11 @@
 <?php
 
 return [
+
+        'called_in' => 'Called In',
+    'seen' => 'Seen',
+    'referred' => 'Referred',
+    'dna' => 'DNA — Did Not Attend',
     'singular_title' => 'Appointment',
     'appointment_title' => 'Appointments',
     'lbl_appointment_date' => 'Appointment Date',
