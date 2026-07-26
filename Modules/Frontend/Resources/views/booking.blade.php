@@ -1487,7 +1487,7 @@
         //     });
         // });
 
-            <script>
+            // <script>
                 document.addEventListener('DOMContentLoaded', function () {
                     const pageCurrentStep = Number(
                         window.bookingConfig?.currentStep ?? 0
@@ -1537,7 +1537,7 @@
                         hasCategories: pageHasCategories,
                     })
                 })
-                </script>
+                {{--</script> --}}
 
 
         function initializePhoneInput(input, hiddenInput) {
