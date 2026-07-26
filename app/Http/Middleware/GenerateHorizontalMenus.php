@@ -81,6 +81,35 @@ class GenerateHorizontalMenus
             'order' => 0,
         ]);
 
+                /*
+        |--------------------------------------------------------------------------
+        | Triage
+        |--------------------------------------------------------------------------
+        |
+        | Doctors and nurses see the Triage Queue when they have
+        | the view_triage_queue permission.
+        |
+        */
+
+        if (
+            $user->hasRole('doctor') ||
+            $user->hasRole('nurse')
+        ) {
+            $this->mainRoute($menu, [
+                'icon' => 'ph ph-clipboard-text',
+                'title' => __('triage.menu_title'),
+                'route' => 'backend.triage.index',
+                'permission' => [
+                    'view_triage_queue',
+                ],
+                'active' => [
+                    'app/triage',
+                    'app/triage/*',
+                ],
+                'order' => 0,
+            ]);
+        }
+
 
         
         $this->mainRoute($menu, [
