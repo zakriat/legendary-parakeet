@@ -1,3 +1,27 @@
+@php
+    $isVideoAppointment =
+        $appointment->consultation_mode === 'video' ||
+        (int) optional(
+            $appointment->clinicservice
+        )->is_video_consultancy === 1;
+
+    $videoJoinLink =
+        $appointment->join_video_link
+        ?: $appointment->meet_link;
+
+    $canJoinVideo = !in_array(
+        $appointment->status,
+        [
+            'cancel',
+            'cancelled',
+            'completed',
+            'checkout',
+            'dna',
+        ],
+        true
+    );
+@endphp
+
 @if (
     $appointment->status == 'cancelled' &&
         optional($appointment->appointmenttransaction)->payment_status != 0 &&
@@ -60,13 +84,50 @@
                     <p class="mb-0 font-size-14 text-primary">#{{ $appointment->id }}</p>
                 </div>
             </li>
-            @if (optional($appointment->clinicservice)->is_video_consultancy)
+            <!-- @if (optional($appointment->clinicservice)->is_video_consultancy)
                 <li>
                     <a class="appointments-videocall"
                         href="{{ $appointment->join_video_link ?? $appointment->meet_link }}">
                         <i class="ph ph-video-camera align-middle"></i></a>
                 </li>
-            @endif
+            @endif -->
+
+        <!-- appointment online -->
+        
+        @if($isVideoAppointment && $canJoinVideo)
+    <li>
+        @if(filled($videoJoinLink))
+            <a
+                class="btn btn-dark btn-sm d-inline-flex align-items-center gap-2 px-3"
+                href="{{ $videoJoinLink }}"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Join video consultation"
+            >
+                <i
+                    class="ph ph-video-camera"
+                    aria-hidden="true"
+                ></i>
+
+                <span>Join call</span>
+            </a>
+        @else
+            <span
+                class="badge border text-dark bg-white px-3 py-2"
+                title="Your meeting link is not available yet"
+            >
+                <i
+                    class="ph ph-clock me-1"
+                    aria-hidden="true"
+                ></i>
+
+                Link pending
+            </span>
+        @endif
+    </li>
+@endif
+        <!-- ends -->
+
         </ul>
     </div>
     <div class="mt-3">

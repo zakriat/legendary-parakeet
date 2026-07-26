@@ -427,7 +427,45 @@
                                                   placeholder="{{ __('frontend.enter_medical_history') }}" rows="6"
                                                   style="transition: all 0.3s ease;"></textarea>
 
-                                        
+                                        <!-- changes for presenting complain -->
+                                        <div class="mb-4">
+                                            <label
+                                                for="presenting_complaint"
+                                                class="form-label fw-semibold text-dark"
+                                            >
+                                                Presenting complaint
+                                                <span class="text-danger" aria-hidden="true">*</span>
+                                            </label>
+
+                                            <p
+                                                id="presenting-complaint-help"
+                                                class="mb-2 text-dark"
+                                            >
+                                                Briefly describe the main symptom or concern for this
+                                                appointment.
+                                            </p>
+
+                                            <textarea
+                                                id="presenting_complaint"
+                                                name="presenting_complaint"
+                                                class="form-control text-dark"
+                                                rows="5"
+                                                maxlength="5000"
+                                                required
+                                                aria-required="true"
+                                                aria-describedby="presenting-complaint-help presenting-complaint-count"
+                                                placeholder="For example: I have had lower back pain for three days. It is worse when bending and started after lifting a heavy box."
+                                            ></textarea>
+
+                                            <div
+                                                id="presenting-complaint-count"
+                                                class="form-text text-dark"
+                                                aria-live="polite"
+                                            >
+                                                0 / 5000 characters
+                                            </div>
+                                        </div>
+                                        <!-- ends -->
                                         
                                         <!-- Hidden field for audio transcription IDs -->
                                         <input type="hidden" id="audio_transcription_ids" name="audio_transcription_ids" value="">
@@ -760,6 +798,132 @@
                                         </div>
                                     </div>
                                 </div> --}}
+
+                                <!-- price changes according to time and place  -->
+
+                                <div
+                                    id="consultation-tariff-section"
+                                    class="card border mb-4 d-none"
+                                >
+                                    <div class="card-body">
+                                        <h5 class="mb-1 text-dark">
+                                            Consultation options
+                                        </h5>
+
+                                        <p class="text-dark mb-3">
+                                            Select how and for how long you would like to
+                                            consult the doctor.
+                                        </p>
+
+                                        <div
+                                            id="consultation-tariff-loading"
+                                            class="text-dark d-none"
+                                            role="status"
+                                        >
+                                            Loading consultation prices...
+                                        </div>
+
+                                        <div
+                                            id="consultation-tariff-empty"
+                                            class="alert alert-light border text-dark d-none"
+                                        >
+                                            The standard service price will be used for this
+                                            appointment.
+                                        </div>
+
+                                        <div
+                                            id="consultation-tariff-options"
+                                            class="row g-3"
+                                        ></div>
+
+                                        <div
+                                            id="consultation-tariff-summary"
+                                            class="border rounded p-3 mt-3 d-none"
+                                            aria-live="polite"
+                                        >
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span class="text-dark">Consultation</span>
+
+                                                <strong
+                                                    id="tariff-summary-price"
+                                                    class="text-dark"
+                                                >
+                                                    £0.00
+                                                </strong>
+                                            </div>
+
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span class="text-dark">Deposit due</span>
+
+                                                <strong
+                                                    id="tariff-summary-deposit"
+                                                    class="text-dark"
+                                                >
+                                                    £0.00
+                                                </strong>
+                                            </div>
+
+                                            <div class="d-flex justify-content-between">
+                                                <span class="text-dark">Remaining balance</span>
+
+                                                <strong
+                                                    id="tariff-summary-remaining"
+                                                    class="text-dark"
+                                                >
+                                                    £0.00
+                                                </strong>
+                                            </div>
+                                        </div>
+
+                                        <input
+                                            type="hidden"
+                                            id="consultation_tariff_id"
+                                            name="consultation_tariff_id"
+                                            value=""
+                                        >
+                                    </div>
+                                </div>
+
+                                <style>
+                                    .consultation-tariff-option {
+                                        width: 100%;
+                                        min-height: 124px;
+                                        padding: 16px;
+                                        border: 2px solid #767676;
+                                        border-radius: 8px;
+                                        color: #111;
+                                        background: #fff;
+                                        text-align: left;
+                                        cursor: pointer;
+                                    }
+
+                                    .consultation-tariff-option:hover,
+                                    .consultation-tariff-option:focus {
+                                        border-color: #111;
+                                        outline: 3px solid rgba(0, 0, 0, 0.15);
+                                        outline-offset: 2px;
+                                    }
+
+                                    .consultation-tariff-option.is-selected {
+                                        border-color: #111;
+                                        background: #f2f2f2;
+                                        box-shadow: inset 0 0 0 1px #111;
+                                    }
+
+                                    .consultation-tariff-option__price {
+                                        color: #111;
+                                        font-size: 1.15rem;
+                                        font-weight: 700;
+                                    }
+
+                                    .consultation-tariff-option__meta {
+                                        color: #262626;
+                                        font-size: 0.9rem;
+                                    }
+                                </style>
+
+                                <!-- ends -->
+                                    
 
                                 <!-- Choose Payment Method Section -->
                                 <div>
@@ -1618,18 +1782,43 @@
         const checkWalletBalanceUrl = "{{ route('check.wallet.balance') }}";
         const initialStep = {{ $currentStep ?? 0 }};
         const tabs = @json($tabs);
-        const routes = {
-            clinicIndex: '{{ route('clinic.index_data') }}',
-            doctorIndex: '{{ route('doctor.index_data') }}',
-            paymentData: '{{ route('payment.data') }}',
-            slotTimeList: '{{ route('slot_time_list') }}',
-            saveAppointment: '{{ route('saveAppointment') }}',
-            appointmentList: '{{ route('appointment-list') }}',
-            appointmentDetails: '{{ route('appointment-details', '') }}',
-            otherPatient:'{{ route("other-patients.store") }}',
-            otherPatientList:'{{ route("other-patients.list") }}?patient_id={{ auth()->id() }}'
-        };
+        // const routes = {
+        //     clinicIndex: '{{ route('clinic.index_data') }}',
+        //     doctorIndex: '{{ route('doctor.index_data') }}',
+        //     paymentData: '{{ route('payment.data') }}',
+        //     slotTimeList: '{{ route('slot_time_list') }}',
+        //     saveAppointment: '{{ route('saveAppointment') }}',
+        //     appointmentList: '{{ route('appointment-list') }}',
+        //     appointmentDetails: '{{ route('appointment-details', '') }}',
+        //     otherPatient:'{{ route("other-patients.store") }}',
+        //     otherPatientList:'{{ route("other-patients.list") }}?patient_id={{ auth()->id() }}'
+        // };
         
+
+        // chnages for price according to place and time
+
+        const routes = {
+                clinicIndex: '{{ route('clinic.index_data') }}',
+                doctorIndex: '{{ route('doctor.index_data') }}',
+                paymentData: '{{ route('payment.data') }}',
+                slotTimeList: '{{ route('slot_time_list') }}',
+                saveAppointment: '{{ route('saveAppointment') }}',
+
+                consultationTariffs:
+                    '{{ route('frontend.booking.consultation-tariffs') }}',
+
+                appointmentList: '{{ route('appointment-list') }}',
+                appointmentDetails:
+                    '{{ route('appointment-details', '') }}',
+
+                otherPatient:
+                    '{{ route("other-patients.store") }}',
+
+                otherPatientList:
+                    '{{ route("other-patients.list") }}?patient_id={{ auth()->id() }}'
+            };
+        // ends
+
         const paymentDetails = @json($paymentDetails ?? '');
         const baseUrl = document.querySelector('meta[name="base-url"]')?.getAttribute('content') || '';
         const paymentDetail = "{{ __('frontend.payment_details') }}";

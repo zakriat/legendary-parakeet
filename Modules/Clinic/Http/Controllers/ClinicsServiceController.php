@@ -27,6 +27,8 @@ use Modules\Clinic\Models\Receptionist;
 use Modules\Tax\Models\Tax;
 use Modules\Clinic\Trait\ClinicTrait;
 
+use Modules\Clinic\Services\ConsultationTariffService;
+
 
 class ClinicsServiceController extends Controller
 {
@@ -638,7 +640,12 @@ class ClinicsServiceController extends Controller
     public function store(ClinicsServiceRequest $request)
     {
         // dd($request->all());
-        $data = $request->except('file_url');
+        // $data = $request->except('file_url');
+
+        $data = $request->except([
+            'file_url',
+            'tariffs',
+        ]);
 
         // Normalize type/service_type
         if (isset($data['service_type']) && empty($data['type'])) {
@@ -691,6 +698,11 @@ class ClinicsServiceController extends Controller
         
 
         $query = ClinicsService::create($data);
+
+        app(ConsultationTariffService::class)->sync(
+            $query,
+            $request->input('tariffs', [])
+        );
 
         // ✅ Save service → clinic mappings (for both in_clinic and online types)
         if ($request->has('clinic_id') && is_array($clinicIds)) {
@@ -753,7 +765,13 @@ class ClinicsServiceController extends Controller
      */
     public function edit($id)
     {
-        $data = ClinicsService::with('ClinicServiceMapping')->findOrFail($id);
+        // $data = ClinicsService::with('ClinicServiceMapping')->findOrFail($id);
+
+        $data = ClinicsService::with([
+            'ClinicServiceMapping',
+            'consultationTariffs',
+        ])->findOrFail($id);
+
         if (!is_null($data)) {
             $custom_field_data = $data->withCustomFields();
             $data['custom_field_data'] = collect($custom_field_data->custom_fields_data)
@@ -789,7 +807,12 @@ class ClinicsServiceController extends Controller
         ]);
      
         $data = ClinicsService::findOrFail($id);
-        $request_data = $request->except('file_url');
+        // $request_data = $request->except('file_url');
+
+        $request_data = $request->except([
+            'file_url',
+            'tariffs',
+        ]);
 
         // Normalize type/service_type
         if (isset($request_data['service_type']) && empty($request_data['type'])) {
@@ -841,6 +864,11 @@ class ClinicsServiceController extends Controller
         
 // dd($request_data);
         $data->update($request_data);
+    
+        app(ConsultationTariffService::class)->sync(
+            $data,
+            $request->input('tariffs', [])
+        );
         
         // Debug: Log the updated data
         \Log::info('Service Updated', [

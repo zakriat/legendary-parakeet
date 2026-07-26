@@ -44,6 +44,9 @@ use Illuminate\Support\Facades\Http;
 use Modules\Clinic\Models\SystemService;
 use Modules\Customer\Models\OtherPatient;
 
+use Modules\Appointment\Services\GoogleMeetService;
+use Modules\Clinic\Models\ConsultationTariff;
+
 class AppointmentController extends Controller
 {
     use AppointmentTrait;
@@ -102,6 +105,145 @@ class AppointmentController extends Controller
     {
         //
     }
+
+    // method for price changes according to time and place
+
+    // public function consultationTariffs(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'service_id' => ['required', 'integer'],
+    //         'clinic_id' => ['nullable', 'integer'],
+    //         'doctor_id' => ['nullable', 'integer'],
+    //         'appointment_date' => ['nullable', 'date'],
+    //         'appointment_time' => ['nullable', 'string', 'max:20'],
+    //     ]);
+
+    //     $appointmentDateTime = null;
+
+    //     if (
+    //         !empty($validated['appointment_date']) &&
+    //         !empty($validated['appointment_time'])
+    //     ) {
+    //         try {
+    //             $appointmentDateTime = Carbon::parse(
+    //                 $validated['appointment_date'] . ' ' .
+    //                 $validated['appointment_time']
+    //             );
+    //         } catch (\Throwable $exception) {
+    //             $appointmentDateTime = null;
+    //         }
+    //     }
+
+    //     $query = ConsultationTariff::query()
+    //         ->where('clinic_service_id', $validated['service_id'])
+    //         ->where('status', 1)
+    //         ->where(function ($query) use ($validated) {
+    //             $query->whereNull('clinic_id');
+
+    //             if (!empty($validated['clinic_id'])) {
+    //                 $query->orWhere(
+    //                     'clinic_id',
+    //                     $validated['clinic_id']
+    //                 );
+    //             }
+    //         })
+    //         ->where(function ($query) use ($validated) {
+    //             $query->whereNull('doctor_id');
+
+    //             if (!empty($validated['doctor_id'])) {
+    //                 $query->orWhere(
+    //                     'doctor_id',
+    //                     $validated['doctor_id']
+    //                 );
+    //             }
+    //         });
+
+    //     if ($appointmentDateTime) {
+    //         $query
+    //             ->where(function ($query) use ($appointmentDateTime) {
+    //                 $query->whereNull('starts_at')
+    //                     ->orWhere(
+    //                         'starts_at',
+    //                         '<=',
+    //                         $appointmentDateTime
+    //                     );
+    //             })
+    //             ->where(function ($query) use ($appointmentDateTime) {
+    //                 $query->whereNull('ends_at')
+    //                     ->orWhere(
+    //                         'ends_at',
+    //                         '>=',
+    //                         $appointmentDateTime
+    //                     );
+    //             });
+    //     }
+
+    //     $tariffs = $query
+    //         ->orderByRaw(
+    //             'CASE WHEN doctor_id IS NULL THEN 1 ELSE 0 END'
+    //         )
+    //         ->orderByRaw(
+    //             'CASE WHEN clinic_id IS NULL THEN 1 ELSE 0 END'
+    //         )
+    //         ->orderByDesc('priority')
+    //         ->orderBy('duration_minutes')
+    //         ->get()
+    //         ->unique(function ($tariff) {
+    //             return implode('|', [
+    //                 $tariff->consultation_mode,
+    //                 $tariff->rate_type,
+    //                 $tariff->duration_minutes,
+    //             ]);
+    //         })
+    //         ->values()
+    //         ->map(function ($tariff) {
+    //             $price = round((float) $tariff->price, 2);
+
+    //             $depositAmount = match ($tariff->deposit_type) {
+    //                 'fixed' => min(
+    //                     round((float) $tariff->deposit_value, 2),
+    //                     $price
+    //                 ),
+
+    //                 'percentage' => min(
+    //                     round(
+    //                         $price *
+    //                         ((float) $tariff->deposit_value / 100),
+    //                         2
+    //                     ),
+    //                     $price
+    //                 ),
+
+    //                 default => 0,
+    //             };
+
+    //             return [
+    //                 'id' => $tariff->id,
+    //                 'name' => $tariff->name,
+    //                 'duration_minutes' =>
+    //                     (int) $tariff->duration_minutes,
+    //                 'consultation_mode' =>
+    //                     $tariff->consultation_mode,
+    //                 'rate_type' => $tariff->rate_type,
+    //                 'price' => $price,
+    //                 'deposit_type' => $tariff->deposit_type,
+    //                 'deposit_value' =>
+    //                     (float) ($tariff->deposit_value ?? 0),
+    //                 'deposit_amount' => $depositAmount,
+    //                 'remaining_amount' => round(
+    //                     $price - $depositAmount,
+    //                     2
+    //                 ),
+    //             ];
+    //         });
+
+    //     return response()->json([
+    //         'status' => true,
+    //         'data' => $tariffs,
+    //     ]);
+    // }
+
+    // ends
 
     public function appointmentList()
     {
@@ -937,6 +1079,245 @@ class AppointmentController extends Controller
         ]);
     }
 
+
+    public function consultationTariffs(Request $request)
+    {
+        $validated = $request->validate([
+            'service_id' => [
+                'required',
+                'integer',
+            ],
+
+            'clinic_id' => [
+                'nullable',
+                'integer',
+            ],
+
+            /*
+            * This is the ID from the doctors table/model used
+            * by state.selectedDoctor.
+            */
+            'doctor_id' => [
+                'nullable',
+                'integer',
+            ],
+
+            'appointment_date' => [
+                'nullable',
+                'date',
+            ],
+
+            'appointment_time' => [
+                'nullable',
+                'string',
+                'max:20',
+            ],
+        ]);
+
+        /*
+        * Convert the selected Doctor model ID to the users.id
+        * stored in consultation_tariffs.doctor_id.
+        */
+        $doctorUserId = null;
+
+        if (!empty($validated['doctor_id'])) {
+            $selectedDoctor = Doctor::query()
+                ->whereKey($validated['doctor_id'])
+                ->where('status', 1)
+                ->first();
+
+            $doctorUserId =
+                $selectedDoctor?->doctor_id;
+        }
+
+        /*
+        * Combine the selected appointment date and time.
+        */
+        $appointmentDateTime = null;
+
+        if (
+            !empty($validated['appointment_date']) &&
+            !empty($validated['appointment_time'])
+        ) {
+            try {
+                $appointmentDateTime = Carbon::parse(
+                    $validated['appointment_date'] . ' ' .
+                    $validated['appointment_time']
+                );
+            } catch (\Throwable $exception) {
+                $appointmentDateTime = null;
+            }
+        }
+
+        $query = ConsultationTariff::query()
+            ->where(
+                'clinic_service_id',
+                $validated['service_id']
+            )
+            ->where('status', 1)
+
+            /*
+            * A tariff can be global or restricted to the
+            * selected clinic.
+            */
+            ->where(function ($query) use ($validated) {
+                $query->whereNull('clinic_id');
+
+                if (!empty($validated['clinic_id'])) {
+                    $query->orWhere(
+                        'clinic_id',
+                        $validated['clinic_id']
+                    );
+                }
+            })
+
+            /*
+            * A tariff can be a service default or a
+            * doctor-specific price.
+            */
+            ->where(function ($query) use ($doctorUserId) {
+                $query->whereNull('doctor_id');
+
+                if ($doctorUserId) {
+                    $query->orWhere(
+                        'doctor_id',
+                        $doctorUserId
+                    );
+                }
+            });
+
+        /*
+        * Only return tariffs that are active at the selected
+        * appointment date and time.
+        */
+        if ($appointmentDateTime) {
+            $query
+                ->where(function ($query) use (
+                    $appointmentDateTime
+                ) {
+                    $query
+                        ->whereNull('starts_at')
+                        ->orWhere(
+                            'starts_at',
+                            '<=',
+                            $appointmentDateTime
+                        );
+                })
+                ->where(function ($query) use (
+                    $appointmentDateTime
+                ) {
+                    $query
+                        ->whereNull('ends_at')
+                        ->orWhere(
+                            'ends_at',
+                            '>=',
+                            $appointmentDateTime
+                        );
+                });
+        }
+
+        $tariffs = $query
+            /*
+            * Doctor-specific prices have priority over
+            * service defaults.
+            */
+            ->orderByRaw(
+                'CASE WHEN doctor_id IS NULL THEN 1 ELSE 0 END'
+            )
+
+            /*
+            * Clinic-specific prices have priority over
+            * global prices.
+            */
+            ->orderByRaw(
+                'CASE WHEN clinic_id IS NULL THEN 1 ELSE 0 END'
+            )
+            ->orderByDesc('priority')
+            ->orderBy('duration_minutes')
+            ->get()
+
+            /*
+            * Do not show both the default and doctor-specific
+            * version of the same mode, rate and duration.
+            */
+            ->unique(function ($tariff) {
+                return implode('|', [
+                    $tariff->consultation_mode,
+                    $tariff->rate_type,
+                    $tariff->duration_minutes,
+                ]);
+            })
+            ->values()
+            ->map(function ($tariff) {
+                $price = round(
+                    (float) $tariff->price,
+                    2
+                );
+
+                $depositAmount = match (
+                    $tariff->deposit_type
+                ) {
+                    'fixed' => min(
+                        round(
+                            (float) $tariff->deposit_value,
+                            2
+                        ),
+                        $price
+                    ),
+
+                    'percentage' => min(
+                        round(
+                            $price * (
+                                (float) $tariff->deposit_value
+                                / 100
+                            ),
+                            2
+                        ),
+                        $price
+                    ),
+
+                    default => 0,
+                };
+
+                return [
+                    'id' => $tariff->id,
+                    'name' => $tariff->name,
+
+                    'duration_minutes' =>
+                        (int) $tariff->duration_minutes,
+
+                    'consultation_mode' =>
+                        $tariff->consultation_mode,
+
+                    'rate_type' =>
+                        $tariff->rate_type,
+
+                    'price' => $price,
+
+                    'deposit_type' =>
+                        $tariff->deposit_type,
+
+                    'deposit_value' =>
+                        (float) (
+                            $tariff->deposit_value ?? 0
+                        ),
+
+                    'deposit_amount' =>
+                        $depositAmount,
+
+                    'remaining_amount' => round(
+                        $price - $depositAmount,
+                        2
+                    ),
+                ];
+            });
+
+        return response()->json([
+            'status' => true,
+            'data' => $tariffs,
+        ]);
+    }
+
     public function saveAppointment(Request $request)
     {
 
@@ -1071,6 +1452,44 @@ class AppointmentController extends Controller
             $data['otherpatient_id'] = null;
         }
         $serviceData = $this->getServiceAmount($data['service_id'], $data['doctor_id'], $data['clinic_id']);
+
+        /*
+|--------------------------------------------------------------------------
+| Resolve optional consultation tariff
+|--------------------------------------------------------------------------
+|
+| The existing service calculation remains the fallback.
+| Prices submitted by JavaScript are never trusted.
+|
+*/
+
+            $tariff = null;
+
+            if ($request->filled('consultation_tariff_id')) {
+                $tariff = ConsultationTariff::query()
+                    ->whereKey($request->consultation_tariff_id)
+                    ->where(
+                        'clinic_service_id',
+                        $data['service_id']
+                    )
+                    ->where('status', 1)
+                    ->where(function ($query) use ($data) {
+                        $query->whereNull('clinic_id')
+                            ->orWhere(
+                                'clinic_id',
+                                $data['clinic_id']
+                            );
+                    })
+                    ->where(function ($query) use ($data) {
+                        $query->whereNull('doctor_id')
+                            ->orWhere(
+                                'doctor_id',
+                                $data['doctor_id']
+                            );
+                    })
+                    ->first();
+            }
+
         $request['selectedServiceName'] = $request['selectedServiceName'] ?? $serviceData['service_name'];
         $data['doctor_name'] = optional($doctor->user)->full_name;
         // $data['doctor_expert'] = optional($doctor->profile)->expert ?? '';
@@ -1081,10 +1500,87 @@ class AppointmentController extends Controller
         $data['appointment_time'] = Carbon::parse($data['appointment_time'])->format('H:i:s');
         $data['start_date_time'] = Carbon::parse($startDatetime)->format('Y-m-d H:i:s');
 
-        $data['service_price'] = $serviceData['service_price'];
-        $data['service_amount'] = $serviceData['service_amount'];
-        $data['total_amount'] = $serviceData['total_amount'];
-        $data['duration'] = $serviceData['duration'];
+        // $data['service_price'] = $serviceData['service_price'];
+        // $data['service_amount'] = $serviceData['service_amount'];
+        // $data['total_amount'] = $serviceData['total_amount'];
+        // $data['duration'] = $serviceData['duration'];
+
+        // changes for price according to time and place
+
+        if ($tariff) {
+        /*
+        * The tariff price is treated as the final consultation
+        * charge in this first compatible rollout.
+        */
+        $serviceAmount = round((float) $tariff->price, 2);
+
+        $depositAmount = match ($tariff->deposit_type) {
+            'fixed' => min(
+                round((float) $tariff->deposit_value, 2),
+                $serviceAmount
+            ),
+
+            'percentage' => min(
+                round(
+                    $serviceAmount *
+                    ((float) $tariff->deposit_value / 100),
+                    2
+                ),
+                $serviceAmount
+            ),
+
+            default => 0,
+        };
+
+        /*
+        * Snapshot the selected tariff.
+        * Later tariff edits will not change this appointment.
+        */
+        $data['consultation_tariff_id'] = $tariff->id;
+        $data['consultation_mode'] =
+            $tariff->consultation_mode;
+        $data['rate_type'] = $tariff->rate_type;
+        $data['tariff_name'] = $tariff->name;
+        $data['tariff_price'] = $serviceAmount;
+        $data['deposit_type'] = $tariff->deposit_type;
+        $data['deposit_value'] =
+            $tariff->deposit_value ?? 0;
+        $data['deposit_amount'] = $depositAmount;
+
+        /*
+        * Continue populating existing appointment fields.
+        */
+        $data['duration'] =
+            (int) $tariff->duration_minutes;
+        $data['service_price'] = $serviceAmount;
+        $data['service_amount'] = $serviceAmount;
+        $data['total_amount'] = $serviceAmount;
+    } else {
+        /*
+        * Original booking calculation.
+        */
+        $data['consultation_tariff_id'] = null;
+        $data['consultation_mode'] = null;
+        $data['rate_type'] = null;
+        $data['tariff_name'] = null;
+        $data['tariff_price'] = null;
+        $data['deposit_type'] = null;
+        $data['deposit_value'] = null;
+        $data['deposit_amount'] = 0;
+
+        $data['service_price'] =
+            $serviceData['service_price'];
+        $data['service_amount'] =
+            $serviceData['service_amount'];
+        $data['total_amount'] =
+            $serviceData['total_amount'];
+        $data['duration'] =
+            $serviceData['duration'];
+    }
+
+        // ends
+
+
         $data['status'] = $data['status'] ? $data['status'] : 'confirmed';
         $data['advance_payment_status'] = $request->input('advance_payment_status');
         $service = ClinicsService::where('id', $data['service_id'])->first();
@@ -1149,23 +1645,112 @@ $data['clinic_name'] = $clinicName;
         $data['appointment_extra_info' ] = $request->input('appointment_extra_info');
 
 
-        if ($service->is_enable_advance_payment == 1) {
-            $advance_payable_amount = round(($data['total_amount'] * $service->advance_payment_amount) / 100, 2);
-            // Calculate advance payment and round to 2 decimal places
-            $data['advance_payment_amount'] = $service->advance_payment_amount;
-            $data['advance_paid_amount'] = $advance_payable_amount;
-            $data['remaining_payment_amount'] = $data['total_amount'] - $advance_payable_amount;
-            $data['payble_amount'] = $advance_payable_amount;
-            $data['advance_payment_status'] = 1;
-            $data['payment_status'] = 0;
-        } else {
-            $data['advance_payment_amount'] = 0;
-            $data['advance_paid_amount'] = 0;
-            $data['remaining_payment_amount'] = 0;
-            $data['advance_payment_status'] = 0;
-            $data['payment_status'] = 1;
-            $data['payble_amount'] = $data['total_amount'];
-        }
+        // if ($service->is_enable_advance_payment == 1) {
+        //     $advance_payable_amount = round(($data['total_amount'] * $service->advance_payment_amount) / 100, 2);
+        //     // Calculate advance payment and round to 2 decimal places
+        //     $data['advance_payment_amount'] = $service->advance_payment_amount;
+        //     $data['advance_paid_amount'] = $advance_payable_amount;
+        //     $data['remaining_payment_amount'] = $data['total_amount'] - $advance_payable_amount;
+        //     $data['payble_amount'] = $advance_payable_amount;
+        //     $data['advance_payment_status'] = 1;
+        //     $data['payment_status'] = 0;
+        // } else {
+        //     $data['advance_payment_amount'] = 0;
+        //     $data['advance_paid_amount'] = 0;
+        //     $data['remaining_payment_amount'] = 0;
+        //     $data['advance_payment_status'] = 0;
+        //     $data['payment_status'] = 1;
+        //     $data['payble_amount'] = $data['total_amount'];
+        // }
+
+        // changes for price according to price and place
+
+        if ($tariff && $data['deposit_amount'] > 0) {
+        /*
+        * Tariff-controlled fixed or percentage deposit.
+        */
+        $data['advance_payment_amount'] =
+            $data['deposit_value'];
+
+        $data['advance_paid_amount'] =
+            $data['deposit_amount'];
+
+        $data['remaining_payment_amount'] = round(
+            $data['total_amount'] -
+            $data['deposit_amount'],
+            2
+        );
+
+        $data['payble_amount'] =
+            $data['deposit_amount'];
+
+        $data['advance_payment_status'] = 1;
+        $data['payment_status'] = 0;
+    } elseif ($tariff) {
+        /*
+        * Tariff exists but requires no deposit.
+        */
+        $data['advance_payment_amount'] = 0;
+        $data['advance_paid_amount'] = 0;
+        $data['remaining_payment_amount'] = 0;
+        $data['payble_amount'] =
+            $data['total_amount'];
+        $data['advance_payment_status'] = 0;
+
+        /*
+        * Cash is still pending until actually collected.
+        */
+        $data['payment_status'] =
+            $request->input('transaction_type') === 'cash'
+                ? 0
+                : 1;
+    } elseif ($service->is_enable_advance_payment == 1) {
+        /*
+        * Original percentage advance-payment behaviour.
+        */
+        $advancePayableAmount = round(
+            (
+                $data['total_amount'] *
+                $service->advance_payment_amount
+            ) / 100,
+            2
+        );
+
+        $data['advance_payment_amount'] =
+            $service->advance_payment_amount;
+
+        $data['advance_paid_amount'] =
+            $advancePayableAmount;
+
+        $data['remaining_payment_amount'] = round(
+            $data['total_amount'] -
+            $advancePayableAmount,
+            2
+        );
+
+        $data['payble_amount'] =
+            $advancePayableAmount;
+
+        $data['advance_payment_status'] = 1;
+        $data['payment_status'] = 0;
+    } else {
+        /*
+        * Original no-advance-payment behaviour.
+        */
+        $data['advance_payment_amount'] = 0;
+        $data['advance_paid_amount'] = 0;
+        $data['remaining_payment_amount'] = 0;
+        $data['advance_payment_status'] = 0;
+        $data['payble_amount'] =
+            $data['total_amount'];
+
+        $data['payment_status'] =
+            $request->input('transaction_type') === 'cash'
+                ? 0
+                : 1;
+    }
+        // ends
+
         // $paymentData = $data;
         // $data = Appointment::create($data);
 
@@ -1220,40 +1805,153 @@ $paymentData = array_merge($appointmentData, [
     'currency_symbol' => $currencySymbol,
 ]);
 
-        $is_telemet = ClinicsService::where('id', $data['service_id'])->pluck('is_video_consultancy')->first();
-        if ($is_telemet == 1) {
-            $setting = Setting::where('name', 'google_meet_method')->orwhere('name', 'is_zoom')->first();
-            if ($data && $setting) {
-                if ($setting->name == 'google_meet_method' && $setting->val == 1) {
-                    $meetLink = $this->generateMeetLink($request, $data['start_date_time'], $data['duration'], $data);
-                } else {
-                    $zoom_url = getzoomVideoUrl($data);
-                    if (!empty($zoom_url) && isset($zoom_url['start_url']) && isset($zoom_url['join_url'])) {
-                        $startUrl = $zoom_url['start_url'];
-                        $joinUrl = $zoom_url['join_url'];
+        // $is_telemet = ClinicsService::where('id', $data['service_id'])->pluck('is_video_consultancy')->first();
+        // if ($is_telemet == 1) {
+        //     $setting = Setting::where('name', 'google_meet_method')->orwhere('name', 'is_zoom')->first();
+        //     if ($data && $setting) {
+        //         if ($setting->name == 'google_meet_method' && $setting->val == 1) {
+        //             $meetLink = $this->generateMeetLink($request, $data['start_date_time'], $data['duration'], $data);
+        //         } else {
+        //             $zoom_url = getzoomVideoUrl($data);
+        //             if (!empty($zoom_url) && isset($zoom_url['start_url']) && isset($zoom_url['join_url'])) {
+        //                 $startUrl = $zoom_url['start_url'];
+        //                 $joinUrl = $zoom_url['join_url'];
 
-                        $data->start_video_link = $startUrl;
-                        $data->join_video_link = $joinUrl;
-                        $data->save();
-                    }
-                }
-            }
+        //                 $data->start_video_link = $startUrl;
+        //                 $data->join_video_link = $joinUrl;
+        //                 $data->save();
+        //             }
+        //         }
+        //     }
+        // }
+
+
+        //updated online app
+
+        /*
+|--------------------------------------------------------------------------
+| Create video meeting
+|--------------------------------------------------------------------------
+*/
+
+$serviceIsVideo =
+    (int) optional($service)
+        ->is_video_consultancy === 1;
+
+$tariffIsVideo =
+    $data->consultation_mode === 'video';
+
+$isVideoAppointment =
+    $tariffIsVideo || $serviceIsVideo;
+
+if ($isVideoAppointment) {
+    $videoSettings = Setting::query()
+        ->whereIn('name', [
+            'google_meet_method',
+            'is_zoom',
+        ])
+        ->pluck('val', 'name');
+
+    $googleMeetEnabled =
+        (int) $videoSettings->get(
+            'google_meet_method',
+            0
+        ) === 1;
+
+    $zoomEnabled =
+        (int) $videoSettings->get(
+            'is_zoom',
+            0
+        ) === 1;
+
+    if ($googleMeetEnabled) {
+        app(GoogleMeetService::class)
+            ->createForAppointment($data);
+    } elseif ($zoomEnabled) {
+        $zoomUrl = getzoomVideoUrl($data);
+
+        if (
+            !empty($zoomUrl['start_url']) &&
+            !empty($zoomUrl['join_url'])
+        ) {
+            $data->forceFill([
+                'start_video_link' =>
+                    $zoomUrl['start_url'],
+
+                'join_video_link' =>
+                    $zoomUrl['join_url'],
+            ])->save();
         }
+    }
+}
 
         $tax = $data['tax_percentage'] ?? Tax::active()->whereNull('module_type')->orWhere('module_type', 'services')->where('tax_type', 'exclusive')->where('status', 1)->get();
+        // $transactionData = [
+        //     'appointment_id' => $data->id,
+        //     'transaction_type' => $data['transaction_type'] ?? 'cash',
+            
+        //     // 'total_amount' => $serviceData['total_amount'],
+
+        //     // changes for price according to time and place
+        //     'total_amount' => $data['total_amount'],
+        //     //end
+
+        //     'payment_status' => $data['payment_status'] ?? 0,
+        //     'discount_value' => $serviceData['discount_value'] ?? 0,
+        //     'discount_type' => $serviceData['discount_type'] ?? null,
+        //     'discount_amount' => $serviceData['discount_amount'] ?? 0,
+        //     'external_transaction_id' => $data['external_transaction_id'] ?? null,
+        //     'tax_percentage' => json_encode($tax),
+        //     'inclusive_tax' => $serviceData['service_inclusive_tax'],
+        //     'inclusive_tax_price' => $serviceData['total_inclusive_tax']
+        // ];
+
+
+        // changes for price according to place and time
+
+
         $transactionData = [
-            'appointment_id' => $data->id,
-            'transaction_type' => $data['transaction_type'] ?? 'cash',
-            'total_amount' => $serviceData['total_amount'],
-            'payment_status' => $data['payment_status'] ?? 0,
-            'discount_value' => $serviceData['discount_value'] ?? 0,
-            'discount_type' => $serviceData['discount_type'] ?? null,
-            'discount_amount' => $serviceData['discount_amount'] ?? 0,
-            'external_transaction_id' => $data['external_transaction_id'] ?? null,
-            'tax_percentage' => json_encode($tax),
-            'inclusive_tax' => $serviceData['service_inclusive_tax'],
-            'inclusive_tax_price' => $serviceData['total_inclusive_tax']
-        ];
+                'appointment_id' => $data->id,
+                'transaction_type' =>
+                    $data['transaction_type'] ?? 'cash',
+
+                'total_amount' => $data['total_amount'],
+
+                'payment_status' =>
+                    $data['payment_status'] ?? 0,
+
+                'discount_value' =>
+                    $tariff
+                        ? 0
+                        : ($serviceData['discount_value'] ?? 0),
+
+                'discount_type' =>
+                    $tariff
+                        ? null
+                        : ($serviceData['discount_type'] ?? null),
+
+                'discount_amount' =>
+                    $tariff
+                        ? 0
+                        : ($serviceData['discount_amount'] ?? 0),
+
+                'external_transaction_id' =>
+                    $data['external_transaction_id'] ?? null,
+
+                'tax_percentage' => json_encode($tax),
+
+                'inclusive_tax' =>
+                    $tariff
+                        ? 0
+                        : ($serviceData['service_inclusive_tax'] ?? 0),
+
+                'inclusive_tax_price' =>
+                    $tariff
+                        ? 0
+                        : ($serviceData['total_inclusive_tax'] ?? 0),
+            ];
+
+        // ends
 
         $payment = AppointmentTransaction::updateOrCreate(
             ['appointment_id' => $data->id],

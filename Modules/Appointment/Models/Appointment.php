@@ -36,7 +36,25 @@ class Appointment extends BaseModel
 
     const CUSTOM_FIELD_MODEL = 'Modules\Appointment\Models\Appointment';
 
-    protected $fillable = ['status', 'start_date_time', 'user_id','otherpatient_id', 'clinic_id', 'doctor_id', 'appointment_extra_info', 'appointment_date', 'appointment_time', 'service_id', 'category_id', 'triage_id', 'linked_appointment_id', 'ordered_by', 'total_amount', 'service_amount', 'service_price', 'duration', 'advance_payment_amount', 'advance_paid_amount', 'is_quick_booking','start_video_link','join_video_link','meet_link','cancellation_charge','cancellation_charge_amount','cancellation_type','reason','type','gf_entry_id','initiated_from_dashboard','test_type','raw_gf_data','synced_at','report_file','report_uploaded_at','report_status','report_notes'];
+    protected $fillable = ['status', 'start_date_time', 'user_id','
+                            otherpatient_id', 'clinic_id', 'doctor_id', 'appointment_extra_info', 
+                            'appointment_date', 'appointment_time', 'service_id', 'category_id', 'triage_id', 
+                            'linked_appointment_id', 'ordered_by', 'total_amount', 'service_amount', 'service_price', 
+                            'duration', 'advance_payment_amount', 'advance_paid_amount', 'is_quick_booking',
+                            'start_video_link','join_video_link','meet_link','cancellation_charge',
+                            'cancellation_charge_amount','cancellation_type','reason','type','gf_entry_id',
+                            'initiated_from_dashboard','test_type','raw_gf_data','synced_at','report_file',
+                            'report_uploaded_at','report_status','report_notes',
+                            'consultation_tariff_id',
+                            'consultation_mode',
+                            'rate_type',
+                            'tariff_name',
+                            'tariff_price',
+                            'deposit_type',
+                            'deposit_value',
+                            'deposit_amount',
+                            'presenting_complaint',
+                            'google_event_id',];
 
     protected $appends = ['file_url'];
 
@@ -52,12 +70,29 @@ class Appointment extends BaseModel
         'raw_gf_data' => 'array',
         'synced_at' => 'datetime',
         'report_uploaded_at' => 'datetime',
+        'tariff_price' => 'decimal:2',
+        'deposit_value' => 'decimal:2',
+        'deposit_amount' => 'decimal:2',
+        
     ];
     /**
      * Create a new factory instance for the model.
      *
      * @return \Illuminate\Database\Eloquent\Factories\Factory
      */
+
+
+    // price changes according to time
+
+    public function consultationTariff()
+    {
+        return $this->belongsTo(
+            \Modules\Clinic\Models\ConsultationTariff::class,
+            'consultation_tariff_id'
+        );
+    }
+
+    // ends
 
     // new data for appointment
 

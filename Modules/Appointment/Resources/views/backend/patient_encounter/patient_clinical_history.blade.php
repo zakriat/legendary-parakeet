@@ -333,6 +333,39 @@
                 @endforelse
             </section>
 
+<!-- for presenting complain -->
+                    @php
+            $presentingComplaint = optional(
+                $data->appointmentdetail
+            )->presenting_complaint;
+        @endphp
+
+        <section
+            class="border rounded p-3 mb-4"
+            aria-labelledby="presenting-complaint-heading"
+        >
+            <h5
+                id="presenting-complaint-heading"
+                class="mb-2 text-dark"
+            >
+                Presenting complaint
+            </h5>
+
+            @if(filled($presentingComplaint))
+                <div
+                    class="text-dark"
+                    style="white-space: pre-wrap;"
+                >{{ $presentingComplaint }}</div>
+            @else
+                <p class="mb-0 text-dark">
+                    No presenting complaint was recorded for this
+                    appointment.
+                </p>
+            @endif
+        </section>
+
+        <!-- ends -->
+
             <section
                 class="patient-history__card"
                 aria-labelledby="medications-heading"

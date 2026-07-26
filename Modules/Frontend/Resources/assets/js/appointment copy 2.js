@@ -13,335 +13,6 @@ window.Dashboard = Dashboard
 // Make state globally accessible for enhanced-booking.js integration
 let state = { ...initialState }
 window.state = state  // Expose state globally
-
-// new code for price changes according to time and place
-let consultationTariffs = []
-let selectedConsultationTariff = null
-
-const formatTariffLabel = (value) => {
-  if (!value) return ''
-
-  return String(value)
-    .replaceAll('_', ' ')
-    .replace(/\b\w/g, character => character.toUpperCase())
-}
-
-const getBookingCurrency = () => {
-  return (
-    window.currencySymbol ||
-    state.currencySymbol ||
-    '£'
-  )
-}
-
-const money = (value) => {
-  const amount = Number(value || 0)
-
-  return `${getBookingCurrency()}${amount.toFixed(2)}`
-}
-
-function clearSelectedConsultationTariff() {
-  selectedConsultationTariff = null
-  state.consultationTariffId = null
-  state.selectedConsultationTariff = null
-
-  const input = document.getElementById(
-    'consultation_tariff_id'
-  )
-
-  if (input) {
-    input.value = ''
-  }
-
-  document
-    .querySelectorAll('.consultation-tariff-option')
-    .forEach(option => {
-      option.classList.remove('is-selected')
-      option.setAttribute('aria-pressed', 'false')
-    })
-
-  document
-    .getElementById('consultation-tariff-summary')
-    ?.classList.add('d-none')
-}
-
-function selectConsultationTariff(tariff) {
-  selectedConsultationTariff = tariff
-  state.consultationTariffId = tariff.id
-  state.selectedConsultationTariff = tariff
-
-  const input = document.getElementById(
-    'consultation_tariff_id'
-  )
-
-  if (input) {
-    input.value = tariff.id
-  }
-
-  document
-    .querySelectorAll('.consultation-tariff-option')
-    .forEach(option => {
-      const selected =
-        Number(option.dataset.tariffId) === Number(tariff.id)
-
-      option.classList.toggle('is-selected', selected)
-      option.setAttribute(
-        'aria-pressed',
-        selected ? 'true' : 'false'
-      )
-    })
-
-  const summary = document.getElementById(
-    'consultation-tariff-summary'
-  )
-
-  const price = document.getElementById(
-    'tariff-summary-price'
-  )
-
-  const deposit = document.getElementById(
-    'tariff-summary-deposit'
-  )
-
-  const remaining = document.getElementById(
-    'tariff-summary-remaining'
-  )
-
-  if (price) {
-    price.textContent = money(tariff.price)
-  }
-
-  if (deposit) {
-    deposit.textContent = money(tariff.deposit_amount)
-  }
-
-  if (remaining) {
-    remaining.textContent = money(tariff.remaining_amount)
-  }
-
-  summary?.classList.remove('d-none')
-
-  /*
-   * Display only. PHP will recalculate these amounts.
-   * Existing state amounts are updated so the old payment
-   * summary displays the currently selected tariff.
-   */
-  state.totalAmount = Number(tariff.price)
-  state.duration = Number(tariff.duration_minutes)
-
-  if (state.payment) {
-    state.payment.advance_payment_status =
-      Number(tariff.deposit_amount) > 0 ? 1 : 0
-
-    state.payment.advance_paid_amount =
-      Number(tariff.deposit_amount)
-
-    state.payment.remaining_payment_amount =
-      Number(tariff.remaining_amount)
-
-    state.payment.payble_amount =
-      Number(tariff.deposit_amount) > 0
-        ? Number(tariff.deposit_amount)
-        : Number(tariff.price)
-  }
-}
-
-function renderConsultationTariffs(tariffs) {
-  const section = document.getElementById(
-    'consultation-tariff-section'
-  )
-
-  const container = document.getElementById(
-    'consultation-tariff-options'
-  )
-
-  const empty = document.getElementById(
-    'consultation-tariff-empty'
-  )
-
-  if (!section || !container || !empty) {
-    return
-  }
-
-  section.classList.remove('d-none')
-  container.innerHTML = ''
-  clearSelectedConsultationTariff()
-
-  if (!Array.isArray(tariffs) || tariffs.length === 0) {
-    empty.classList.remove('d-none')
-    return
-  }
-
-  empty.classList.add('d-none')
-
-  tariffs.forEach(tariff => {
-    const column = document.createElement('div')
-    column.className = 'col-12 col-md-6 col-xl-4'
-
-    const button = document.createElement('button')
-    button.type = 'button'
-    button.className = 'consultation-tariff-option'
-    button.dataset.tariffId = tariff.id
-    button.setAttribute('aria-pressed', 'false')
-
-    const title = document.createElement('div')
-    title.className = 'fw-bold text-dark mb-1'
-    title.textContent =
-      tariff.name ||
-      `${tariff.duration_minutes} minute consultation`
-
-    const metadata = document.createElement('div')
-    metadata.className =
-      'consultation-tariff-option__meta mb-2'
-
-    metadata.textContent = [
-      `${tariff.duration_minutes} minutes`,
-      formatTariffLabel(tariff.consultation_mode),
-      formatTariffLabel(tariff.rate_type)
-    ].filter(Boolean).join(' · ')
-
-    const price = document.createElement('div')
-    price.className =
-      'consultation-tariff-option__price mb-1'
-    price.textContent = money(tariff.price)
-
-    const deposit = document.createElement('div')
-    deposit.className =
-      'consultation-tariff-option__meta'
-
-    deposit.textContent =
-      Number(tariff.deposit_amount) > 0
-        ? `Deposit due: ${money(tariff.deposit_amount)}`
-        : 'No deposit required'
-
-    button.append(title, metadata, price, deposit)
-
-    button.addEventListener('click', () => {
-      selectConsultationTariff(tariff)
-    })
-
-    column.appendChild(button)
-    container.appendChild(column)
-  })
-
-  /*
-   * Select automatically only when there is exactly one
-   * valid tariff. Otherwise the patient must choose.
-   */
-  if (tariffs.length === 1) {
-    selectConsultationTariff(tariffs[0])
-  }
-}
-
-async function loadConsultationTariffs() {
-  const section = document.getElementById(
-    'consultation-tariff-section'
-  )
-
-  const loading = document.getElementById(
-    'consultation-tariff-loading'
-  )
-
-  if (!section) {
-    return
-  }
-
-  if (!state.selectedService) {
-    section.classList.add('d-none')
-    clearSelectedConsultationTariff()
-    return
-  }
-
-  section.classList.remove('d-none')
-  loading?.classList.remove('d-none')
-
-  const parameters = new URLSearchParams({
-    service_id: state.selectedService
-  })
-
-  if (state.selectedClinic) {
-    parameters.append(
-      'clinic_id',
-      state.selectedClinic
-    )
-  }
-
-  /*
-   * Your frontend selectedDoctor is the Doctor model ID.
-   * If the tariff uses users.id, expose the corresponding
-   * user ID as state.selectedDoctorUserId.
-   */
-
-  // const tariffDoctorId =
-  //   state.selectedDoctorUserId ||
-  //   state.doctor_id ||
-  //   ''
-
-  // if (tariffDoctorId) {
-  //   parameters.append('doctor_id', tariffDoctorId)
-  // }
-
-  if (state.selectedDoctor) {
-    parameters.append(
-      'doctor_id',
-      state.selectedDoctor
-    )
-  }
-
-  if (state.selectedDate) {
-    parameters.append(
-      'appointment_date',
-      state.selectedDate
-    )
-  }
-
-  if (state.selectedTime) {
-    parameters.append(
-      'appointment_time',
-      state.selectedTime
-    )
-  }
-
-  try {
-    const response = await fetch(
-      `${routes.consultationTariffs}?${parameters.toString()}`,
-      {
-        headers: {
-          Accept: 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
-        }
-      }
-    )
-
-    if (!response.ok) {
-      throw new Error(
-        `Tariff request failed with ${response.status}`
-      )
-    }
-
-    const result = await response.json()
-    consultationTariffs = result.data || []
-
-    renderConsultationTariffs(consultationTariffs)
-  } catch (error) {
-    console.error(
-      'Unable to load consultation tariffs:',
-      error
-    )
-
-    consultationTariffs = []
-    renderConsultationTariffs([])
-  } finally {
-    loading?.classList.add('d-none')
-  }
-}
-
-window.loadConsultationTariffs = loadConsultationTariffs
-
-// ends
-
-
-
 let currentStep = initialStep
 let otherpatient_id = null;
 let finalColumns = [
@@ -1259,75 +930,10 @@ function loadStepContent(step) {
       nextButton.classList.remove('d-none')
       break
 
-    // case 'Choose Date, Time, Payment':
-    //   const stepElement = document.getElementById('step-content-3')
-    //   stepElement.classList.remove('d-none')
-    //   fetchDynamicData(state)
-
-    // changes for price according to time and placements
-
-    case 'Choose Date, Time, Payment': {
-      const stepElement = document.getElementById(
-        'step-content-3'
-      )
-
-      if (stepElement) {
-        stepElement.classList.remove('d-none')
-      }
-
-      /*
-      * Keep the existing payment calculation.
-      */
+    case 'Choose Date, Time, Payment':
+      const stepElement = document.getElementById('step-content-3')
+      stepElement.classList.remove('d-none')
       fetchDynamicData(state)
-
-      /*
-      * Set today's date when no date has been selected.
-      */
-      if (!state.selectedDate) {
-        const today = new Date()
-          .toISOString()
-          .split('T')[0]
-
-        state.selectedDate = today
-
-        const dateInput = document.getElementById(
-          'appointment_date'
-        )
-
-        if (dateInput) {
-          dateInput.value = today
-        }
-      }
-
-      /*
-      * Load the appointment slots.
-      */
-      if (state.selectedDate) {
-        const dateInput = document.getElementById(
-          'appointment_date'
-        )
-
-        if (dateInput) {
-          dateInput.value = state.selectedDate
-        }
-
-        fetchAvailableTimeSlots(state.selectedDate)
-      }
-
-      /*
-      * Load consultation duration, mode, price and deposit.
-      *
-      * Do not use currentStep === 4 here. In this booking
-      * implementation the payment content is step-content-3,
-      * and the tab index can also change when categories exist.
-      */
-      loadConsultationTariffs()
-
-      nextButton.classList.add('d-none')
-      break
-    }
-
-    // ends
 
       // Set today's date as default if no date is selected
       if (!state.selectedDate) {
@@ -1766,36 +1372,10 @@ function initializeDateChange() {
 
 function handleDateChange(event) {
   const selectedDate = event.target.value
-
-  if (!selectedDate) {
-    return
+  if (selectedDate) {
+    state.selectedDate = selectedDate
+    fetchAvailableTimeSlots(selectedDate)
   }
-
-  state.selectedDate = selectedDate
-
-  /*
-   * Clear the previously selected time because it may not
-   * be available on the newly selected date.
-   */
-  state.selectedTime = null
-
-  /*
-   * Clear the previous tariff because the date can affect
-   * standard, out-of-hours and bank-holiday pricing.
-   */
-  clearSelectedConsultationTariff()
-
-  /*
-   * Fetch available appointment times only once.
-   */
-  fetchAvailableTimeSlots(selectedDate)
-
-  /*
-   * Reload tariffs for the newly selected date.
-   * A time-specific tariff will be rechecked when the
-   * patient selects a time.
-   */
-  loadConsultationTariffs()
 }
 
 function fetchAvailableTimeSlots(date, clinic_id, doctor_id, service_id) {
@@ -1858,34 +1438,24 @@ function updateTimeSlots(timeSlots) {
   })
 }
 
-// function selectTimeSlot(time) {
-//   // Remove 'active' class from all time slot buttons
-//   const allButtons = document.querySelectorAll('.time-slot-btn')
-//   allButtons.forEach((button) => button.classList.remove('active'))
+function selectTimeSlot(time) {
+  // Remove 'active' class from all time slot buttons
+  const allButtons = document.querySelectorAll('.time-slot-btn')
+  allButtons.forEach((button) => button.classList.remove('active'))
 
-//   // Add 'active' class to the selected button
-//   const selectedButton = Array.from(allButtons).find((button) => button.textContent === time)
-//   if (selectedButton) {
-//     selectedButton.classList.add('active')
-//   }
+  // Add 'active' class to the selected button
+  const selectedButton = Array.from(allButtons).find((button) => button.textContent === time)
+  if (selectedButton) {
+    selectedButton.classList.add('active')
+  }
 
-//   // state.selectedTime = time
+  state.selectedTime = time
 
-//   // // changes for price according to time and place
-//   //     /*
-//   //   * The selected time determines whether the rate is
-//   //   * standard, out of hours or night.
-//   //   */
-//   //   clearSelectedConsultationTariff()
-//   //   loadConsultationTariffs()
-
-  
-
-//   const submitButton = document.getElementById('submitAppointment')
-//   if (state.selectedTime && state.selectedPaymentMethod) {
-//     submitButton.disabled = false // Enable the button
-//   }
-// }
+  const submitButton = document.getElementById('submitAppointment')
+  if (state.selectedTime && state.selectedPaymentMethod) {
+    submitButton.disabled = false // Enable the button
+  }
+}
 
 //uppy
 // const uppy = new Uppy({
@@ -1918,46 +1488,6 @@ function updateTimeSlots(timeSlots) {
 // })
 
 // Uppy medical report upload
-
-function selectTimeSlot(time) {
-  const allButtons = document.querySelectorAll(
-    '.time-slot-btn'
-  )
-
-  allButtons.forEach(button => {
-    button.classList.remove('active')
-  })
-
-  const selectedButton = Array
-    .from(allButtons)
-    .find(button => button.textContent.trim() === time)
-
-  if (selectedButton) {
-    selectedButton.classList.add('active')
-  }
-
-  state.selectedTime = time
-
-  /*
-   * Reload pricing because selecting a time can change
-   * the rate to standard, out of hours or night.
-   */
-  clearSelectedConsultationTariff()
-  loadConsultationTariffs()
-
-  const submitButton = document.getElementById(
-    'submitAppointment'
-  )
-
-  if (
-    submitButton &&
-    state.selectedTime &&
-    state.selectedPaymentMethod
-  ) {
-    submitButton.disabled = false
-  }
-}
-
 const uppy = new Uppy({
   restrictions: {
     maxFileSize: 20 * 1024 * 1024, // 20MB
@@ -2159,37 +1689,6 @@ async function submitForm() {
         document.getElementById('appointment_extra_info').value
     );
 
-
-      // for present complain
-            const presentingComplaintInput =
-        document.getElementById('presenting_complaint')
-
-      const presentingComplaint =
-        presentingComplaintInput?.value?.trim() || ''
-
-      if (!presentingComplaint) {
-        presentingComplaintInput?.focus()
-
-        Snackbar.show({
-          text: 'Please describe the main reason for this appointment.',
-          pos: 'bottom-left',
-          duration: 3000,
-          showAction: false,
-          backgroundColor: '#212529',
-          textColor: '#ffffff'
-        })
-
-        submitButton.disabled = false
-        return
-      }
-
-      formData.append(
-        'presenting_complaint',
-        presentingComplaint
-      )
-
-      // ends
-      
     // Upload every selected file
     if (state.uploadedFiles && state.uploadedFiles.length) {
         state.uploadedFiles.forEach(file => {
@@ -2209,14 +1708,6 @@ async function submitForm() {
   formData.append('advance_payment_status', state.payment.advance_payment_status)
   formData.append('otherpatient_id', otherpatient_id)
   formData.append('appointment_extra_info', document.getElementById('appointment_extra_info').value)
-
-  if (selectedConsultationTariff?.id) {
-      formData.append(
-        'consultation_tariff_id',
-        selectedConsultationTariff.id
-      )
-    }
-
   // Log formData
 
     // new data form appends here

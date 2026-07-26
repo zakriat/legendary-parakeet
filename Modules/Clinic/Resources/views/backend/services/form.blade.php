@@ -239,6 +239,59 @@
         </div>
     </div>
 
+    <!-- new price feilds -->
+
+    <div class="col-12 mt-4">
+        <section
+            class="consultation-pricing"
+            aria-labelledby="consultation-pricing-heading"
+        >
+            <div
+                class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3"
+            >
+                <div>
+                    <h5
+                        id="consultation-pricing-heading"
+                        class="mb-1"
+                    >
+                        Consultation pricing
+                    </h5>
+
+                    <p class="mb-0 text-muted">
+                        Add duration, consultation mode, rate and
+                        deposit options available to patients.
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn btn-outline-primary"
+                    id="addTariffButton"
+                >
+                    <i
+                        class="ph ph-plus"
+                        aria-hidden="true"
+                    ></i>
+
+                    Add price
+                </button>
+            </div>
+
+            <div
+                id="consultationTariffRows"
+                aria-live="polite"
+            ></div>
+
+            <div
+                id="noTariffMessage"
+                class="border rounded p-3 text-center"
+            >
+                No duration-based prices added. The current default
+                service price will continue to be used.
+            </div>
+        </section>
+    </div>
+    <!-- new price feilds ends -->
     <div class="d-flex justify-content-end gap-3 mt-4">
         <button type="button" class="btn btn-light fw-semibold px-4 py-2" data-bs-dismiss="offcanvas">{{ __('clinic.cancel') }}</button>
         <button type="button" id="saveServiceBtn" class="btn btn-secondary fw-semibold px-4 py-2" data-mode="create">{{ __('clinic.save') }}</button>
@@ -246,6 +299,40 @@
 </form>
 
 <style>
+
+/* css for for new feilds for price */
+
+.consultation-pricing {
+    background: #ffffff;
+    border: 1px solid #d5d5d5;
+    border-radius: 8px;
+    color: #171717;
+    padding: 18px;
+}
+
+.consultation-tariff-row {
+    background: #f8f9fa;
+    border: 1px solid #d5d5d5;
+    border-radius: 8px;
+    margin-bottom: 14px;
+    padding: 16px;
+}
+
+.consultation-tariff-row label {
+    color: #171717;
+    font-weight: 600;
+}
+
+.consultation-tariff-row
+    .form-control:focus,
+.consultation-tariff-row
+    .form-select:focus {
+    border-color: #222222;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.15);
+}
+
+/* end */
+
 .validation-error {
     font-size: 0.875em;
     display: block !important;
@@ -260,6 +347,421 @@
 </style>
 
 <script>
+
+// new feilds js
+
+class ConsultationTariffEditor {
+    constructor() {
+        this.container = document.getElementById(
+            'consultationTariffRows'
+        );
+
+        this.emptyMessage = document.getElementById(
+            'noTariffMessage'
+        );
+
+        this.addButton = document.getElementById(
+            'addTariffButton'
+        );
+
+        this.nextIndex = 0;
+
+        if (!this.container || !this.addButton) {
+            return;
+        }
+
+        this.addButton.addEventListener(
+            'click',
+            () => this.add()
+        );
+
+        this.container.addEventListener(
+            'click',
+            (event) => {
+                const removeButton =
+                    event.target.closest(
+                        '.remove-tariff'
+                    );
+
+                if (!removeButton) {
+                    return;
+                }
+
+                removeButton
+                    .closest(
+                        '.consultation-tariff-row'
+                    )
+                    .remove();
+
+                this.updateEmptyState();
+            }
+        );
+
+        this.container.addEventListener(
+            'change',
+            (event) => {
+                if (
+                    event.target.classList.contains(
+                        'tariff-deposit-type'
+                    )
+                ) {
+                    this.updateDepositField(
+                        event.target
+                    );
+                }
+
+                if (
+                    event.target.classList.contains(
+                        'tariff-rate-type'
+                    )
+                ) {
+                    this.updateTimeFields(
+                        event.target
+                    );
+                }
+            }
+        );
+
+        this.updateEmptyState();
+    }
+
+    add(tariff = {}) {
+        const index = this.nextIndex++;
+
+        const row = document.createElement('div');
+
+        row.className =
+            'consultation-tariff-row';
+
+        row.innerHTML = `
+            <input
+                type="hidden"
+                name="tariffs[${index}][id]"
+                value="${this.escape(tariff.id || '')}"
+            >
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">
+                        Label
+                    </label>
+
+                    <input
+                        type="text"
+                        class="form-control"
+                        name="tariffs[${index}][name]"
+                        value="${this.escape(
+                            tariff.name || ''
+                        )}"
+                        placeholder="For example: Standard 30 minutes"
+                        required
+                    >
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">
+                        Duration
+                    </label>
+
+                    <select
+                        class="form-select"
+                        name="tariffs[${index}][duration_minutes]"
+                        required
+                    >
+                        ${this.options(
+                            [10, 20, 30, 60],
+                            tariff.duration_minutes
+                        )}
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">
+                        Consultation mode
+                    </label>
+
+                    <select
+                        class="form-select"
+                        name="tariffs[${index}][consultation_mode]"
+                        required
+                    >
+                        ${this.namedOptions(
+                            {
+                                in_clinic:
+                                    'At clinic',
+                                video:
+                                    'Video consultation',
+                                home_visit:
+                                    'Home visit'
+                            },
+                            tariff.consultation_mode ||
+                                'in_clinic'
+                        )}
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">
+                        Rate
+                    </label>
+
+                    <select
+                        class="form-select tariff-rate-type"
+                        name="tariffs[${index}][rate_type]"
+                        required
+                    >
+                        ${this.namedOptions(
+                            {
+                                standard:
+                                    'Standard',
+                                out_of_hours:
+                                    'Out of hours',
+                                night:
+                                    'Night',
+                                bank_holiday:
+                                    'Bank holiday'
+                            },
+                            tariff.rate_type ||
+                                'standard'
+                        )}
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">
+                        Price
+                    </label>
+
+                    <input
+                        type="number"
+                        class="form-control"
+                        name="tariffs[${index}][price]"
+                        value="${this.escape(
+                            tariff.price || ''
+                        )}"
+                        min="0"
+                        step="0.01"
+                        required
+                    >
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">
+                        Deposit type
+                    </label>
+
+                    <select
+                        class="form-select tariff-deposit-type"
+                        name="tariffs[${index}][deposit_type]"
+                    >
+                        ${this.namedOptions(
+                            {
+                                none:
+                                    'No deposit',
+                                fixed:
+                                    'Fixed amount',
+                                percentage:
+                                    'Percentage'
+                            },
+                            tariff.deposit_type ||
+                                'none'
+                        )}
+                    </select>
+                </div>
+
+                <div class="col-md-3 tariff-deposit-wrapper">
+                    <label class="form-label">
+                        Deposit value
+                    </label>
+
+                    <input
+                        type="number"
+                        class="form-control tariff-deposit-value"
+                        name="tariffs[${index}][deposit_value]"
+                        value="${this.escape(
+                            tariff.deposit_value || 0
+                        )}"
+                        min="0"
+                        step="0.01"
+                    >
+                </div>
+
+                <div class="col-md-3 tariff-time-wrapper">
+                    <label class="form-label">
+                        Starts at
+                    </label>
+
+                    <input
+                        type="time"
+                        class="form-control"
+                        name="tariffs[${index}][starts_at]"
+                        value="${this.escape(
+                            tariff.starts_at || ''
+                        )}"
+                    >
+                </div>
+
+                <div class="col-md-3 tariff-time-wrapper">
+                    <label class="form-label">
+                        Ends at
+                    </label>
+
+                    <input
+                        type="time"
+                        class="form-control"
+                        name="tariffs[${index}][ends_at]"
+                        value="${this.escape(
+                            tariff.ends_at || ''
+                        )}"
+                    >
+                </div>
+
+                <div
+                    class="col-md-3 d-flex align-items-end"
+                >
+                    <input
+                        type="hidden"
+                        name="tariffs[${index}][status]"
+                        value="1"
+                    >
+
+                    <button
+                        type="button"
+                        class="btn btn-outline-danger remove-tariff w-100"
+                    >
+                        Remove
+                    </button>
+                </div>
+            </div>
+        `;
+
+        this.container.appendChild(row);
+
+        this.updateDepositField(
+            row.querySelector(
+                '.tariff-deposit-type'
+            )
+        );
+
+        this.updateTimeFields(
+            row.querySelector(
+                '.tariff-rate-type'
+            )
+        );
+
+        this.updateEmptyState();
+    }
+
+    load(tariffs = []) {
+        this.container.innerHTML = '';
+        this.nextIndex = 0;
+
+        tariffs.forEach(
+            (tariff) => this.add(tariff)
+        );
+
+        this.updateEmptyState();
+    }
+
+    reset() {
+        this.load([]);
+    }
+
+    updateDepositField(select) {
+        const row = select.closest(
+            '.consultation-tariff-row'
+        );
+
+        const input = row.querySelector(
+            '.tariff-deposit-value'
+        );
+
+        const disabled =
+            select.value === 'none';
+
+        input.disabled = disabled;
+
+        if (disabled) {
+            input.value = 0;
+        }
+    }
+
+    updateTimeFields(select) {
+        const row = select.closest(
+            '.consultation-tariff-row'
+        );
+
+        const wrappers = row.querySelectorAll(
+            '.tariff-time-wrapper'
+        );
+
+        const needsTime = [
+            'out_of_hours',
+            'night'
+        ].includes(select.value);
+
+        wrappers.forEach((wrapper) => {
+            wrapper.classList.toggle(
+                'd-none',
+                !needsTime
+            );
+        });
+    }
+
+    updateEmptyState() {
+        const hasRows =
+            this.container.children.length > 0;
+
+        this.emptyMessage.classList.toggle(
+            'd-none',
+            hasRows
+        );
+    }
+
+    options(values, selected) {
+        return values.map((value) => `
+            <option
+                value="${value}"
+                ${Number(selected) === value
+                    ? 'selected'
+                    : ''}
+            >
+                ${value} minutes
+            </option>
+        `).join('');
+    }
+
+    namedOptions(values, selected) {
+        return Object.entries(values)
+            .map(([value, label]) => `
+                <option
+                    value="${value}"
+                    ${selected === value
+                        ? 'selected'
+                        : ''}
+                >
+                    ${label}
+                </option>
+            `)
+            .join('');
+    }
+
+    escape(value) {
+        const element =
+            document.createElement('div');
+
+        element.textContent =
+            value == null ? '' : String(value);
+
+        return element.innerHTML;
+    }
+}
+
+window.consultationTariffEditor =
+    new ConsultationTariffEditor();
+
+// end
+
 // Optimized Service Form Handler
 class ServiceFormHandler {
     constructor() {
@@ -846,6 +1348,14 @@ class ServiceFormHandler {
         
         // Reset the form
         $('#serviceForm')[0].reset();
+
+        // new price feilds
+        if (
+            window.consultationTariffEditor
+        ) {
+            window.consultationTariffEditor.reset();
+        }
+        // ends
         
         // Clear all Select2 dropdowns properly
         $('#serviceForm .select2').each(function() {
@@ -954,19 +1464,85 @@ class ServiceFormHandler {
         }
     }
 
+    // async loadServiceData(id) {
+    //     try {
+    //         const response = await fetch(`${this.baseUrl}/app/services/${id}/edit`, {
+    //             headers: { 'Accept': 'application/json' }
+    //         });
+    //         const data = await response.json();
+    //         const serviceData = data.data || data;
+
+    //         // starts
+    //         window.consultationTariffEditor.load(
+    //         serviceData.consultation_tariffs || []
+    //     ); 
+    //     // new code
+
+    //         await this.populateForm(serviceData);
+    //     } catch (error) {
+    //         this.showImageError("{{ __('clinic.failed_to_load_service_data') }}");
+    //     }
+    // }
+
+    // new code for price feidsl
+
     async loadServiceData(id) {
         try {
-            const response = await fetch(`${this.baseUrl}/app/services/${id}/edit`, {
-                headers: { 'Accept': 'application/json' }
-            });
-            const data = await response.json();
-            const serviceData = data.data || data;
+            const response = await fetch(
+                `${this.baseUrl}/app/services/${id}/edit`,
+                {
+                    headers: {
+                        Accept: 'application/json'
+                    }
+                }
+            );
 
+            if (!response.ok) {
+                throw new Error(
+                    'The service could not be loaded.'
+                );
+            }
+
+            const responseData =
+                await response.json();
+
+            const serviceData =
+                responseData.data || responseData;
+
+            /*
+            * Populate the existing service fields first.
+            */
             await this.populateForm(serviceData);
+
+            /*
+            * Load duration-based consultation tariffs.
+            */
+            if (
+                window.consultationTariffEditor
+            ) {
+                window.consultationTariffEditor.load(
+                    serviceData
+                        .consultation_tariffs || []
+                );
+            }
         } catch (error) {
-            this.showImageError("{{ __('clinic.failed_to_load_service_data') }}");
+            console.error(
+                'Service loading failed:',
+                error
+            );
+
+            if (
+                window.consultationTariffEditor
+            ) {
+                window.consultationTariffEditor.reset();
+            }
+
+            this.showImageError(
+                "{{ __('clinic.failed_to_load_service_data') }}"
+            );
         }
     }
+    // ends
 
     async populateForm(data) {
         // Suppress events during form population to prevent unwanted triggers

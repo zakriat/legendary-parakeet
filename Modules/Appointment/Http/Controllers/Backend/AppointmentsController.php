@@ -38,6 +38,9 @@ use Modules\Wallet\Models\Wallet;
 use Modules\Wallet\Models\WalletHistory;
 use Modules\Clinic\Models\Receptionist;
 
+
+use Modules\Appointment\Services\GoogleMeetService;
+
 class AppointmentsController extends Controller
 {
     use AppointmentTrait;
@@ -361,22 +364,83 @@ class AppointmentsController extends Controller
         ->update(['appointment_id' => $appointment->id]);
 
     // Telemedicine link creation
-    if ($service && $service->is_video_consultancy == 1) {
-        $setting = Setting::whereIn('name', ['google_meet_method', 'is_zoom'])->first();
-        if ($setting) {
-            if ($setting->name == 'google_meet_method' && $setting->val == 1) {
-                $this->generateMeetLink($request, $appointment->start_date_time, $appointment->duration, $appointment);
-            } else {
-                $zoom_url = getzoomVideoUrl($appointment);
-                if (!empty($zoom_url['start_url']) && !empty($zoom_url['join_url'])) {
-                    $appointment->update([
-                        'start_video_link' => $zoom_url['start_url'],
-                        'join_video_link' => $zoom_url['join_url'],
-                    ]);
-                }
-            }
+    // if ($service && $service->is_video_consultancy == 1) {
+    //     $setting = Setting::whereIn('name', ['google_meet_method', 'is_zoom'])->first();
+    //     if ($setting) {
+    //         if ($setting->name == 'google_meet_method' && $setting->val == 1) {
+    //             $this->generateMeetLink($request, $appointment->start_date_time, $appointment->duration, $appointment);
+    //         } else {
+    //             $zoom_url = getzoomVideoUrl($appointment);
+    //             if (!empty($zoom_url['start_url']) && !empty($zoom_url['join_url'])) {
+    //                 $appointment->update([
+    //                     'start_video_link' => $zoom_url['start_url'],
+    //                     'join_video_link' => $zoom_url['join_url'],
+    //                 ]);
+    //             }
+    //         }
+    //     }
+    // }
+
+    /*
+|--------------------------------------------------------------------------
+| Telemedicine link creation
+|--------------------------------------------------------------------------
+*/
+
+$serviceIsVideo =
+    (int) optional($service)
+        ->is_video_consultancy === 1;
+
+$tariffIsVideo =
+    $appointment->consultation_mode === 'video';
+
+$isVideoAppointment =
+    $tariffIsVideo || $serviceIsVideo;
+
+if ($isVideoAppointment) {
+    $videoSettings = Setting::query()
+        ->whereIn('name', [
+            'google_meet_method',
+            'is_zoom',
+        ])
+        ->pluck('val', 'name');
+
+    $googleMeetEnabled =
+        (int) $videoSettings->get(
+            'google_meet_method',
+            0
+        ) === 1;
+
+    $zoomEnabled =
+        (int) $videoSettings->get(
+            'is_zoom',
+            0
+        ) === 1;
+
+    if ($googleMeetEnabled) {
+        app(GoogleMeetService::class)
+            ->createForAppointment(
+                $appointment
+            );
+    } elseif ($zoomEnabled) {
+        $zoomUrl = getzoomVideoUrl(
+            $appointment
+        );
+
+        if (
+            !empty($zoomUrl['start_url']) &&
+            !empty($zoomUrl['join_url'])
+        ) {
+            $appointment->forceFill([
+                'start_video_link' =>
+                    $zoomUrl['start_url'],
+
+                'join_video_link' =>
+                    $zoomUrl['join_url'],
+            ])->save();
         }
     }
+}
 
     // Upload medical files
     // if ($request->hasFile('medical_report')) {
@@ -934,11 +998,36 @@ class AppointmentsController extends Controller
         $message = __('appointment.save_appointment');
         return response()->json(['message' => $message, 'data' => $payment, 'status' => true], 200);
     }
+    // public function joinGoogleMeet(Request $request)
+    // {
+    //     $id = $request->id;
+    //     $authUrl = Appointment::where('id', $id)->value('meet_link');
+    //     return redirect($authUrl);
+    // }
+
     public function joinGoogleMeet(Request $request)
     {
-        $id = $request->id;
-        $authUrl = Appointment::where('id', $id)->value('meet_link');
-        return redirect($authUrl);
+        $request->validate([
+            'id' => [
+                'required',
+                'integer',
+                'exists:appointments,id',
+            ],
+        ]);
+
+        $appointment = Appointment::query()
+            ->findOrFail($request->id);
+
+        if (blank($appointment->meet_link)) {
+            return back()->withErrors([
+                'google_meet' =>
+                    'The Google Meet link is not available.',
+            ]);
+        }
+
+        return redirect()->away(
+            $appointment->meet_link
+        );
     }
 
     public function joinZoomMeet(Request $request)
@@ -949,124 +1038,124 @@ class AppointmentsController extends Controller
     }
 
 
-    public function generateMeetLink(Request $request, $startDateTime, $duration, $data)
-    {
-        $employee = User::find($data['doctor_id']);
-        if ($employee) {
-            $googleAccessToken = json_decode($employee->google_access_token, true);
-            $accessToken = $googleAccessToken['access_token'] ?? null;
-            $refreshToken = $googleAccessToken['refresh_token'] ?? null;
-            $googleMeetSettings = Setting::whereIn('name', ['google_meet_method', 'google_clientid', 'google_secret_key'])
-                ->pluck('val', 'name');
-            $settings = $googleMeetSettings->toArray();
-            $client = new GoogleClient([
-                'client_id' => $settings['google_clientid'],
-                'client_secret' => $settings['google_secret_key'],
-                'redirect_uri' => 'postmessage',
-                'access_type' => 'offline', // Use 'offline' for refresh token flow
-                'prompt' => 'consent', // Use 'consent' to force user consent for refresh token
-                'scopes' => ['https://www.googleapis.com/auth/calendar.events'],
-            ]);
+    // public function generateMeetLink(Request $request, $startDateTime, $duration, $data)
+    // {
+    //     $employee = User::find($data['doctor_id']);
+    //     if ($employee) {
+    //         $googleAccessToken = json_decode($employee->google_access_token, true);
+    //         $accessToken = $googleAccessToken['access_token'] ?? null;
+    //         $refreshToken = $googleAccessToken['refresh_token'] ?? null;
+    //         $googleMeetSettings = Setting::whereIn('name', ['google_meet_method', 'google_clientid', 'google_secret_key'])
+    //             ->pluck('val', 'name');
+    //         $settings = $googleMeetSettings->toArray();
+    //         $client = new GoogleClient([
+    //             'client_id' => $settings['google_clientid'],
+    //             'client_secret' => $settings['google_secret_key'],
+    //             'redirect_uri' => 'postmessage',
+    //             'access_type' => 'offline', // Use 'offline' for refresh token flow
+    //             'prompt' => 'consent', // Use 'consent' to force user consent for refresh token
+    //             'scopes' => ['https://www.googleapis.com/auth/calendar.events'],
+    //         ]);
 
-            $client->setAccessToken($accessToken);
+    //         $client->setAccessToken($accessToken);
 
-            if ($client->isAccessTokenExpired()) {
-                if ($refreshToken) {
-                    $client->refreshToken($refreshToken);
-                    $newAccessToken = $client->getAccessToken();
-                    User::where('id', $data['doctor_id'])->update(['google_access_token' => json_encode($newAccessToken)]);
+    //         if ($client->isAccessTokenExpired()) {
+    //             if ($refreshToken) {
+    //                 $client->refreshToken($refreshToken);
+    //                 $newAccessToken = $client->getAccessToken();
+    //                 User::where('id', $data['doctor_id'])->update(['google_access_token' => json_encode($newAccessToken)]);
 
-                    $request->session()->put('google_access_token', json_encode($newAccessToken));
-                } else {
-                    $authUrl = $client->createAuthUrl();
-                    return redirect()->away($authUrl);
-                }
-            }
-        }
-        $service = new Calendar($client);
-        $user = User::find($data->user_id);
-        $center = ClinicServiceMapping::with('service', 'center')
-            ->where('service_id', $data->service_id)
-            ->where('clinic_id', $data->center_id)
-            ->first();
-        if ($employee && $center) {
-            $clinicService = $center->service;
-            $clinic = $center->center;
+    //                 $request->session()->put('google_access_token', json_encode($newAccessToken));
+    //             } else {
+    //                 $authUrl = $client->createAuthUrl();
+    //                 return redirect()->away($authUrl);
+    //             }
+    //         }
+    //     }
+    //     $service = new Calendar($client);
+    //     $user = User::find($data->user_id);
+    //     $center = ClinicServiceMapping::with('service', 'center')
+    //         ->where('service_id', $data->service_id)
+    //         ->where('clinic_id', $data->center_id)
+    //         ->first();
+    //     if ($employee && $center) {
+    //         $clinicService = $center->service;
+    //         $clinic = $center->center;
 
-            $emailData = [
-                'service_name' => $clinicService->name,
-                'user_name' => "{$user->first_name} {$user->last_name}",
-                'clinic_name' => $clinic->name,
-                'doctor_name' => "{$employee->first_name} {$employee->last_name}",
-                'appointment_date' => $data->appointment_date,
-                'appointment_time' => $data->appointment_time,
-            ];
-        }
-        $contentSettings = Setting::whereIn('name', ['content', 'google_event'])->pluck('val', 'name');
+    //         $emailData = [
+    //             'service_name' => $clinicService->name,
+    //             'user_name' => "{$user->first_name} {$user->last_name}",
+    //             'clinic_name' => $clinic->name,
+    //             'doctor_name' => "{$employee->first_name} {$employee->last_name}",
+    //             'appointment_date' => $data->appointment_date,
+    //             'appointment_time' => $data->appointment_time,
+    //         ];
+    //     }
+    //     $contentSettings = Setting::whereIn('name', ['content', 'google_event'])->pluck('val', 'name');
 
-        $content = $contentSettings['content'] ?? '';
-        $googleEvent = $contentSettings['google_event'] ?? '';
+    //     $content = $contentSettings['content'] ?? '';
+    //     $googleEvent = $contentSettings['google_event'] ?? '';
 
-        $placeholders = [
-            '{{appointment_date}}' => $emailData['appointment_date'],
-            '{{appointment_time}}' => $emailData['appointment_time'],
-            '{{patient_name}}' => $emailData['user_name'],
-            '{{clinic_name}}' => $emailData['clinic_name'],
-            '{{appointment_desc}}' => $emailData['clinic_name'],
-            '{{service_name}}' => $emailData['clinic_name'],
-        ];
+    //     $placeholders = [
+    //         '{{appointment_date}}' => $emailData['appointment_date'],
+    //         '{{appointment_time}}' => $emailData['appointment_time'],
+    //         '{{patient_name}}' => $emailData['user_name'],
+    //         '{{clinic_name}}' => $emailData['clinic_name'],
+    //         '{{appointment_desc}}' => $emailData['clinic_name'],
+    //         '{{service_name}}' => $emailData['clinic_name'],
+    //     ];
 
-        foreach ($placeholders as $placeholder => $value) {
-            $content = str_replace($placeholder, $value, $content);
-            $googleEvent = str_replace($placeholder, $value, $googleEvent);
-        }
-        $startDateTime = Carbon::parse($data->appointment_date . ' ' . $data->appointment_time)->format('Y-m-d\TH:i:s');
-        $endDateTime = Carbon::parse($startDateTime)->addHour()->format('Y-m-d\TH:i:s');
+    //     foreach ($placeholders as $placeholder => $value) {
+    //         $content = str_replace($placeholder, $value, $content);
+    //         $googleEvent = str_replace($placeholder, $value, $googleEvent);
+    //     }
+    //     $startDateTime = Carbon::parse($data->appointment_date . ' ' . $data->appointment_time)->format('Y-m-d\TH:i:s');
+    //     $endDateTime = Carbon::parse($startDateTime)->addHour()->format('Y-m-d\TH:i:s');
 
-        $event = new \Google\Service\Calendar\Event([
-            'summary' => $googleEvent,
-            'description' => $content,
-            'start' => [
-                'dateTime' => $startDateTime,
-                'timeZone' => 'UTC',
-            ],
-            'end' => [
-                'dateTime' => $endDateTime,
-                'timeZone' => 'UTC',
-            ],
-            'conferenceData' => [
-                'createRequest' => [
-                    'requestId' => uniqid(),
-                    'conferenceSolutionKey' => [
-                        'type' => 'hangoutsMeet',
-                    ],
-                ],
-            ],
-        ]);
-        $calendarId = 'primary';
-        $event = $service->events->insert($calendarId, $event, ['conferenceDataVersion' => 1]);
-        $meetingDetails = [
-            'title' => $event->getSummary(),
-            'description' => $event->getDescription(),
-            'start' => $event->getStart()->getDateTime(),
-            'end' => $event->getEnd()->getDateTime(),
-            'location' => $event->getLocation(),
-            'attendees' => $event->getAttendees(),
-            'link' => $event->getHangoutLink(),
-        ];
-        $hangoutLink = $meetingDetails['link'];
+    //     $event = new \Google\Service\Calendar\Event([
+    //         'summary' => $googleEvent,
+    //         'description' => $content,
+    //         'start' => [
+    //             'dateTime' => $startDateTime,
+    //             'timeZone' => 'UTC',
+    //         ],
+    //         'end' => [
+    //             'dateTime' => $endDateTime,
+    //             'timeZone' => 'UTC',
+    //         ],
+    //         'conferenceData' => [
+    //             'createRequest' => [
+    //                 'requestId' => uniqid(),
+    //                 'conferenceSolutionKey' => [
+    //                     'type' => 'hangoutsMeet',
+    //                 ],
+    //             ],
+    //         ],
+    //     ]);
+    //     $calendarId = 'primary';
+    //     $event = $service->events->insert($calendarId, $event, ['conferenceDataVersion' => 1]);
+    //     $meetingDetails = [
+    //         'title' => $event->getSummary(),
+    //         'description' => $event->getDescription(),
+    //         'start' => $event->getStart()->getDateTime(),
+    //         'end' => $event->getEnd()->getDateTime(),
+    //         'location' => $event->getLocation(),
+    //         'attendees' => $event->getAttendees(),
+    //         'link' => $event->getHangoutLink(),
+    //     ];
+    //     $hangoutLink = $meetingDetails['link'];
 
-        if (!empty($hangoutLink)) {
-            $data->meet_link = $hangoutLink;
-        }
-        $data->save();
+    //     if (!empty($hangoutLink)) {
+    //         $data->meet_link = $hangoutLink;
+    //     }
+    //     $data->save();
 
-        $emails = User::whereIn('id', [$data['employee_id'], $data['user_id']])
-            ->pluck('email')
-            ->toArray();
-        Mail::to($emails)->send(new AppointmentConfirmation($meetingDetails));
-        return $meetingDetails;
-    }
+    //     $emails = User::whereIn('id', [$data['employee_id'], $data['user_id']])
+    //         ->pluck('email')
+    //         ->toArray();
+    //     Mail::to($emails)->send(new AppointmentConfirmation($meetingDetails));
+    //     return $meetingDetails;
+    // }
 
 
 

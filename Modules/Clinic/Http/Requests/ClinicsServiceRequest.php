@@ -19,7 +19,77 @@ class ClinicsServiceRequest extends FormRequest
             'duration_min'      => 'required|integer',
             'charges'           => 'required|numeric',
             'status'            => 'sometimes|boolean',
+
+            'tariffs' => [
+                        'nullable',
+                        'array',
+                    ],
+
+                    'tariffs.*.id' => [
+                        'nullable',
+                        'integer',
+                        'exists:consultation_tariffs,id',
+                    ],
+
+                    'tariffs.*.name' => [
+                        'required_with:tariffs',
+                        'string',
+                        'max:150',
+                    ],
+
+                    'tariffs.*.duration_minutes' => [
+                        'required_with:tariffs',
+                        'integer',
+                        'in:10,20,30,60',
+                    ],
+
+                    'tariffs.*.consultation_mode' => [
+                        'required_with:tariffs',
+                        'in:in_clinic,video,home_visit',
+                    ],
+
+                    'tariffs.*.rate_type' => [
+                        'required_with:tariffs',
+                        'in:standard,out_of_hours,night,bank_holiday',
+                    ],
+
+                    'tariffs.*.price' => [
+                        'required_with:tariffs',
+                        'numeric',
+                        'min:0',
+                        'max:999999.99',
+                    ],
+
+                    'tariffs.*.deposit_type' => [
+                        'required_with:tariffs',
+                        'in:none,fixed,percentage',
+                    ],
+
+                    'tariffs.*.deposit_value' => [
+                        'nullable',
+                        'numeric',
+                        'min:0',
+                        'max:999999.99',
+                    ],
+
+                    'tariffs.*.starts_at' => [
+                        'nullable',
+                        'date_format:H:i',
+                    ],
+
+                    'tariffs.*.ends_at' => [
+                        'nullable',
+                        'date_format:H:i',
+                    ],
+
+                    'tariffs.*.status' => [
+                        'nullable',
+                        'boolean',
+                    ],
+
         ];
+
+        
 
         // If multiVendor is enabled, require system_service_id
         if (multiVendor()) {
@@ -67,5 +137,56 @@ class ClinicsServiceRequest extends FormRequest
         }
 
         throw new HttpResponseException(redirect()->back()->withInput()->with('errors', $validator->errors()));
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            foreach (
+                $this->input('tariffs', [])
+                as $index => $tariff
+            ) {
+                $depositType =
+                    $tariff['deposit_type'] ?? 'none';
+
+                $depositValue = (float) (
+                    $tariff['deposit_value'] ?? 0
+                );
+
+                $price = (float) (
+                    $tariff['price'] ?? 0
+                );
+
+                if (
+                    $depositType === 'fixed' &&
+                    $depositValue > $price
+                ) {
+                    $validator->errors()->add(
+                        "tariffs.{$index}.deposit_value",
+                        'The fixed deposit cannot exceed the tariff price.'
+                    );
+                }
+
+                if (
+                    $depositType === 'percentage' &&
+                    $depositValue > 100
+                ) {
+                    $validator->errors()->add(
+                        "tariffs.{$index}.deposit_value",
+                        'The percentage deposit cannot exceed 100%.'
+                    );
+                }
+
+                if (
+                    $depositType !== 'none' &&
+                    $depositValue <= 0
+                ) {
+                    $validator->errors()->add(
+                        "tariffs.{$index}.deposit_value",
+                        'Enter a deposit value greater than zero.'
+                    );
+                }
+            }
+        });
     }
 }

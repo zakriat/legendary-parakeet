@@ -115,7 +115,17 @@ Route::group(['middleware' => ['auth','user_check']], function () {
     Route::post('/save-appointment', [AppointmentController::class, 'saveAppointment'])->name('saveAppointment');
     Route::get('/user-notifications', [UserController::class, 'userNotifications'])->name('user-notifications');
     Route::get('/user-notifications-index-data', [UserController::class, 'userNotifications_indexData'])->name('user-notifications.index_data');
+    
+    Route::get(
+            'booking/consultation-tariffs',
+            [
+                \Modules\Frontend\Http\Controllers\AppointmentController::class,
+                'consultationTariffs',
+            ]
+        )->name('frontend.booking.consultation-tariffs');
     Route::get('booking/{id}', [ServiceController::class, 'booking'])->name('booking');
+
+
     Route::post('/transcribe-audio', [ServiceController::class, 'transcribeAudio'])->name('transcribe-audio');
     Route::post('/transcribe-audio-enhanced', [ServiceController::class, 'transcribeAudioEnhanced'])->name('transcribe-audio-enhanced');
     Route::post('/pay-now', [AppointmentController::class, 'payNow'])->name('pay-now');

@@ -58,6 +58,15 @@ class ClinicsService extends BaseModel
     }
 
 
+    public function consultationTariffs()
+    {
+        return $this->hasMany(
+            ConsultationTariff::class,
+            'clinic_service_id'
+        )->orderBy('priority', 'desc')
+        ->orderBy('duration_minutes');
+    }
+
     public function category()
     {
         return $this->belongsTo(ClinicsCategory::class, 'category_id');
