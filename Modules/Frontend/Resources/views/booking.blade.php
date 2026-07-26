@@ -428,43 +428,43 @@
                                                   style="transition: all 0.3s ease;"></textarea>
 
                                         <!-- changes for presenting complain -->
-                                        <div class="mb-4">
-                                            <label
-                                                for="presenting_complaint"
-                                                class="form-label fw-semibold text-dark"
-                                            >
-                                                Presenting complaint
-                                                <span class="text-danger" aria-hidden="true">*</span>
-                                            </label>
+                                    <div class="mb-4">
+                                        <label
+                                            for="presenting_complaint"
+                                            class="form-label fw-semibold text-dark"
+                                        >
+                                            Presenting complaint
+                                            <span class="text-danger" aria-hidden="true">*</span>
+                                        </label>
 
-                                            <p
-                                                id="presenting-complaint-help"
-                                                class="mb-2 text-dark"
-                                            >
-                                                Briefly describe the main symptom or concern for this
-                                                appointment.
-                                            </p>
+                                        <p
+                                            id="presenting-complaint-help"
+                                            class="mb-2 text-dark"
+                                        >
+                                            Briefly describe the main symptom or concern for this
+                                            appointment.
+                                        </p>
 
-                                            <textarea
-                                                id="presenting_complaint"
-                                                name="presenting_complaint"
-                                                class="form-control text-dark"
-                                                rows="5"
-                                                maxlength="5000"
-                                                required
-                                                aria-required="true"
-                                                aria-describedby="presenting-complaint-help presenting-complaint-count"
-                                                placeholder="For example: I have had lower back pain for three days. It is worse when bending and started after lifting a heavy box."
-                                            ></textarea>
+                                        <textarea
+                                            id="presenting_complaint"
+                                            name="presenting_complaint"
+                                            class="form-control text-dark"
+                                            rows="5"
+                                            maxlength="5000"
+                                            required
+                                            aria-required="true"
+                                            aria-describedby="presenting-complaint-help presenting-complaint-count"
+                                            placeholder="For example: I have had lower back pain for three days. It is worse when bending and started after lifting a heavy box."
+                                        ></textarea>
 
-                                            <div
-                                                id="presenting-complaint-count"
-                                                class="form-text text-dark"
-                                                aria-live="polite"
-                                            >
-                                                0 / 5000 characters
-                                            </div>
+                                        <div
+                                            id="presenting-complaint-count"
+                                            class="form-text text-dark"
+                                            aria-live="polite"
+                                        >
+                                            0 / 5000 characters
                                         </div>
+                                    </div>
                                         <!-- ends -->
                                         
                                         <!-- Hidden field for audio transcription IDs -->
@@ -1428,9 +1428,9 @@
 @endpush
 
 @push('after-scripts')
-    <script type="text/javascript" src="{{ asset('vendor/datatable/datatables.min.js') }}"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/css/intlTelInput.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/intlTelInput.min.js"></script>
+
+
+
     <script type="text/javascript" defer>
         // Pass PHP variables to JavaScript
         window.bookingConfig = {
@@ -1899,6 +1899,10 @@
         });
 
     </script>
+    <script type="text/javascript" src="{{ asset('vendor/datatable/datatables.min.js') }}"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/css/intlTelInput.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/intlTelInput.min.js"></script>
+  
     <script>
         window.patientFormMessages = {
             first_name_required: "{{ __('messages.first_name_required') }}",
