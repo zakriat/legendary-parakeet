@@ -14,6 +14,10 @@ window.Dashboard = Dashboard
 let state = { ...initialState }
 window.state = state  // Expose state globally
 
+const hasCategories = Boolean(
+  window.bookingConfig?.hasCategories
+)
+
 // new code for price changes according to time and place
 let consultationTariffs = []
 let selectedConsultationTariff = null
@@ -2189,7 +2193,7 @@ async function submitForm() {
       )
 
       // ends
-      
+
     // Upload every selected file
     if (state.uploadedFiles && state.uploadedFiles.length) {
         state.uploadedFiles.forEach(file => {
