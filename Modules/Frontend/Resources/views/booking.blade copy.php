@@ -1440,105 +1440,52 @@
             serviceId: {{ $serviceId ?? 'null' }}
         };
 
-        // document.addEventListener('DOMContentLoaded', function() {
-        //     // Set protection flag for services with categories
-        //     @if($hasCategories ?? false)
-        //         window.skipOriginalStep0 = true;
-        //         console.log('🛡️ PROTECTION ACTIVATED: skipOriginalStep0 = true for service with categories');
-        //     @endif
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set protection flag for services with categories
+            @if($hasCategories ?? false)
+                window.skipOriginalStep0 = true;
+                console.log('🛡️ PROTECTION ACTIVATED: skipOriginalStep0 = true for service with categories');
+            @endif
 
-        //     var input = document.querySelector("#mobile");
-        //     var hiddenInput = document.querySelector("#fullPhoneNumber");
+            var input = document.querySelector("#mobile");
+            var hiddenInput = document.querySelector("#fullPhoneNumber");
 
-        //     // Debug logging
-        //     console.log('Enhanced Booking Debug:', {
-        //         currentStep: currentStep,
-        //         hasCategories: hasCategories,
-        //         serviceId: {{ $serviceId ?? 'null' }},
-        //         categorySelectionExists: !!document.querySelector('.category-selection-container'),
-        //         stepContent0Exists: !!document.getElementById('step-content-0'),
-        //         stepContent0Visible: document.getElementById('step-content-0') ? !document.getElementById('step-content-0').classList.contains('d-none') : false
-        //     });
+            // Debug logging
+            console.log('Enhanced Booking Debug:', {
+                currentStep: currentStep,
+                hasCategories: hasCategories,
+                serviceId: {{ $serviceId ?? 'null' }},
+                categorySelectionExists: !!document.querySelector('.category-selection-container'),
+                stepContent0Exists: !!document.getElementById('step-content-0'),
+                stepContent0Visible: document.getElementById('step-content-0') ? !document.getElementById('step-content-0').classList.contains('d-none') : false
+            });
 
-        //     // Only initialize if elements exist
-        //     if (input && hiddenInput) {
-        //         initializePhoneInput(input, hiddenInput);
-        //     }
+            // Only initialize if elements exist
+            if (input && hiddenInput) {
+                initializePhoneInput(input, hiddenInput);
+            }
 
-        //     // Ensure step 0 is visible for categories
-        //     if (hasCategories && currentStep === 0) {
-        //         const stepContent0 = document.getElementById('step-content-0');
-        //         if (stepContent0) {
-        //             stepContent0.classList.remove('d-none');
-        //             console.log('Ensured step-content-0 is visible for categories');
-        //         }
-        //     }
+            // Ensure step 0 is visible for categories
+            if (hasCategories && currentStep === 0) {
+                const stepContent0 = document.getElementById('step-content-0');
+                if (stepContent0) {
+                    stepContent0.classList.remove('d-none');
+                    console.log('Ensured step-content-0 is visible for categories');
+                }
+            }
 
-        //     // Initialize booking flow
-        //     initializeBookingFlow();
+            // Initialize booking flow
+            initializeBookingFlow();
             
-        //     // Listen for category selection
-        //     document.addEventListener('categorySelected', function(event) {
-        //         selectedCategoryId = event.detail.categoryId;
-        //         categoryRequiresDoctor = event.detail.requiresDoctor;
+            // Listen for category selection
+            document.addEventListener('categorySelected', function(event) {
+                selectedCategoryId = event.detail.categoryId;
+                categoryRequiresDoctor = event.detail.requiresDoctor;
                 
-        //         // Update step navigation based on category requirements
-        //         updateStepNavigation();
-        //     });
-        // });
-
-            <script>
-                document.addEventListener('DOMContentLoaded', function () {
-                    const pageCurrentStep = Number(
-                        window.bookingConfig?.currentStep ?? 0
-                    )
-
-                    const pageHasCategories = Boolean(
-                        window.bookingConfig?.hasCategories
-                    )
-
-                    @if($hasCategories ?? false)
-                        window.skipOriginalStep0 = true
-                    @endif
-
-                    const input = document.querySelector('#mobile')
-                    const hiddenInput = document.querySelector(
-                        '#fullPhoneNumber'
-                    )
-
-                    if (input && hiddenInput) {
-                        initializePhoneInput(input, hiddenInput)
-                    }
-
-                    /*
-                    * appointment.js controls category-based bookings.
-                    * Running the old controller at the same time causes
-                    * the category section to reappear below payment.
-                    */
-                    if (!pageHasCategories) {
-                        initializeBookingFlow()
-                    }
-
-                    document.addEventListener(
-                        'categorySelected',
-                        function (event) {
-                            selectedCategoryId =
-                                event.detail.categoryId
-
-                            categoryRequiresDoctor =
-                                event.detail.requiresDoctor
-
-                            updateStepNavigation()
-                        }
-                    )
-
-                    console.log('Booking page initialized', {
-                        currentStep: pageCurrentStep,
-                        hasCategories: pageHasCategories,
-                    })
-                })
-                </script>
-
+                // Update step navigation based on category requirements
+                updateStepNavigation();
+            });
+        });
 
         function initializePhoneInput(input, hiddenInput) {
             var iti = window.intlTelInput(input, {
