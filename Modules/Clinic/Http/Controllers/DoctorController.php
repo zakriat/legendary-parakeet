@@ -1416,15 +1416,33 @@ class DoctorController extends Controller
             ], 422);
         }
 
-        $data = User::role(['doctor'])->findOrFail($id);
-        $request_data = $request->except(['profile_image', 'password', 'remove_profile_image']);
+        // $data = User::role(['doctor'])->findOrFail($id);
+        // $request_data = $request->except(['profile_image', 'password', 'remove_profile_image']);
 
-        // Preserve gmc_number if not sent / empty
+        // // Preserve gmc_number if not sent / empty
+        // if (!$request->filled('gmc_number')) {
+        //     unset($request_data['gmc_number']);
+        // }
+
+        // $oldGmcNumber = $user->gmc_number;
+
+        $data = User::role('doctor')->findOrFail($id);
+
+        $request_data = $request->except([
+            'profile_image',
+            'password',
+            'remove_profile_image',
+        ]);
+
+        /*
+        * Preserve the existing GMC number if the field
+        * was omitted or submitted empty.
+        */
         if (!$request->filled('gmc_number')) {
             unset($request_data['gmc_number']);
         }
 
-        $oldGmcNumber = $user->gmc_number;
+        $oldGmcNumber = $data->gmc_number;
 
         $request_data['mobile'] = str_replace(' ', '', $request_data['mobile']);
         
@@ -1457,11 +1475,27 @@ class DoctorController extends Controller
             $request->vendor_id = auth()->user()->id;
         }
         
+        // $data->update($request_data);
+
+        //  if ($oldGmcNumber !== $user->gmc_number) {
+        //     // A verification for the old number is no longer valid.
+        //     $user->gmcVerification?->delete();
+        // }
+
         $data->update($request_data);
 
-         if ($oldGmcNumber !== $user->gmc_number) {
-            // A verification for the old number is no longer valid.
-            $user->gmcVerification?->delete();
+        /*
+        * Refresh the model so the comparison uses the value
+        * that was actually saved to the database.
+        */
+        $data->refresh();
+
+        if ($oldGmcNumber !== $data->gmc_number) {
+            /*
+            * Verification of the previous GMC number is no
+            * longer valid after the number changes.
+            */
+            $data->gmcVerification?->delete();
         }
 
         // Profile info
