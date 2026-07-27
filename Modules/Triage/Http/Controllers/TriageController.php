@@ -11,7 +11,6 @@ use Modules\Triage\Models\PatientTriage;
 use Modules\Triage\Models\TriageCategory;
 use Modules\Triage\Models\TriageItem;
 use Modules\Triage\Models\TriagePreCheck;
-
 use Yajra\DataTables\DataTables;
 
 class TriageController extends Controller
@@ -27,9 +26,9 @@ class TriageController extends Controller
             'module_icon'  => 'ph ph-clipboard-text',
         ]);
 
-        $this->middleware(['permission:view_triage_queue'])->only('index', 'index_data','show',);
+        $this->middleware(['permission:view_triage_queue'])->only('index', 'index_data','show');
         $this->middleware(['permission:add_triage'])->only('store');
-        $this->middleware(['permission:edit_triage'])->only('update', 'show');
+        $this->middleware(['permission:edit_triage'])->only('update');
         $this->middleware(['permission:escalate_triage'])->only('escalate');
     }
 
