@@ -109,7 +109,7 @@
                     aria-hidden="true"
                 ></i>
 
-                <span>Join call</span>
+                <span style="color: white;">Join call</span>
             </a>
         @else
             <span
