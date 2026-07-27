@@ -1271,16 +1271,6 @@ function loadStepContent(step) {
     // changes for price according to time and placements
 
     case 'Choose Date, Time, Payment': {
-      /*
-      * Hide category, clinic and doctor content before
-      * displaying the final booking/payment step.
-      */
-      ;[0, 1, 2].forEach(stepNumber => {
-        document
-          .getElementById(`step-content-${stepNumber}`)
-          ?.classList.add('d-none')
-      })
-
       const stepElement = document.getElementById(
         'step-content-3'
       )

@@ -1528,10 +1528,6 @@
                             categoryRequiresDoctor =
                                 event.detail.requiresDoctor
 
-                            document
-                            .getElementById('step-content-0')
-                            ?.classList.remove('d-none')
-
                             updateStepNavigation()
                         }
                     )
