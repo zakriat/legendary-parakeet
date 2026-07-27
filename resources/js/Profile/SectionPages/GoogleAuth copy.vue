@@ -64,27 +64,13 @@ export default {
     async login() {
       googleSdkLoaded((google) => {
         google.accounts.oauth2
-        .initCodeClient({
-          client_id: this.googleClientId,
-
-          scope: [
-            'openid',
-            'email',
-            'profile',
-            'https://www.googleapis.com/auth/calendar.events',
-          ].join(' '),
-
-          redirect_uri: 'postmessage',
-
-          select_account: true,
-
-          callback: response => {
-            if (response.code) {
-              this.sendCodeToBackend(response.code)
-            }
-          },
-        })
-        .requestCode()
+          .initCodeClient({
+            client_id: this.googleClientId,
+            scope: 'email profile openid',
+            redirect_uri: 'postmessage',
+            callback: (response) => response.code && this.sendCodeToBackend(response.code)
+          })
+          .requestCode()
       })
     },
     async sendCodeToBackend(code) {
