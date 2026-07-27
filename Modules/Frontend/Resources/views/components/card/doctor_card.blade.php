@@ -13,6 +13,8 @@
                 <span class="doctor-available"></span>
             </div>
             <p class="font-size-14 mb-0 fw-medium">{{ optional(optional($doctor->user)->profile)->expert ?? '' }}</p>
+            <p class="font-size-14 mb-0 fw-medium">{{ optional(optional($doctor->user)->profile)->about_self ?? '' }}</p>
+
         </div>
         @php
             $rating = $doctor->average_rating ?? 0;
