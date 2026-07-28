@@ -5,7 +5,8 @@
     aria-labelledby="appointment-referral-title"
     aria-hidden="true"
 >
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <!-- <div class="modal-dialog modal-xl modal-dialog-scrollable"> -->
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content text-dark">
             <form id="appointment-referral-form">
                 @csrf
@@ -340,3 +341,115 @@
         </div>
     </div>
 </div>
+
+<style>
+    /*
+     * Keep the modal inside the available viewport.
+     */
+    #appointment-referral-modal {
+        overflow: hidden;
+    }
+
+    #appointment-referral-modal .modal-dialog {
+        width: min(1140px, calc(100vw - 2rem));
+        height: calc(100vh - 2rem);
+        max-height: calc(100vh - 2rem);
+        margin: 1rem auto;
+    }
+
+    #appointment-referral-modal .modal-content {
+        height: 100%;
+        max-height: calc(100vh - 2rem);
+        overflow: hidden;
+        color: #111;
+        background-color: #fff;
+        border: 1px solid #555;
+        border-radius: 0.5rem;
+    }
+
+    /*
+     * The form is between modal-content and modal-body.
+     * It must therefore carry Bootstrap's flex layout.
+     */
+    #appointment-referral-form {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    #appointment-referral-modal .modal-header,
+    #appointment-referral-modal .modal-footer {
+        flex: 0 0 auto;
+        background-color: #fff;
+    }
+
+    #appointment-referral-modal .modal-header {
+        border-bottom: 1px solid #777;
+    }
+
+    #appointment-referral-modal .modal-footer {
+        border-top: 1px solid #777;
+    }
+
+    /*
+     * Only this middle section scrolls.
+     */
+    #appointment-referral-modal .modal-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        padding: 1.25rem;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #appointment-referral-modal label,
+    #appointment-referral-modal legend,
+    #appointment-referral-modal .modal-title,
+    #appointment-referral-modal .form-label,
+    #appointment-referral-modal .form-check-label {
+        color: #111;
+    }
+
+    #appointment-referral-modal .form-control,
+    #appointment-referral-modal .form-select {
+        color: #111;
+        background-color: #fff;
+        border: 1px solid #666;
+    }
+
+    #appointment-referral-modal .form-control:focus,
+    #appointment-referral-modal .form-select:focus {
+        color: #111;
+        border-color: #111;
+        box-shadow: 0 0 0 0.15rem rgba(0, 0, 0, 0.18);
+    }
+
+    #referral-form-errors {
+        color: #111;
+        white-space: pre-line;
+    }
+
+    @media (max-width: 767.98px) {
+        #appointment-referral-modal .modal-dialog {
+            width: calc(100vw - 1rem);
+            height: calc(100vh - 1rem);
+            max-height: calc(100vh - 1rem);
+            margin: 0.5rem auto;
+        }
+
+        #appointment-referral-modal .modal-content {
+            max-height: calc(100vh - 1rem);
+        }
+
+        #appointment-referral-modal .modal-body {
+            padding: 1rem;
+        }
+    }
+</style>

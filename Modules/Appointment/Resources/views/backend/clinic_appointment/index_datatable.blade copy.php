@@ -1235,120 +1235,58 @@
             let cancellation_charge = @json(setting('cancellation_charge'));
             let cancelltion_Type = @json(setting('cancellation_type'));
 
-            /*
- * Capture the status before Select2 changes it.
- */
-$(document).on(
-    'select2:opening',
-    '.change-select',
-    function () {
-        previousStatus = $(this).val()
-    }
-)
+            $(document).on('focus', '.change-select', function () {
+                previousStatus = $(this).val();
+            });
 
-/*
- * Fallback for normal non-Select2 fields.
- */
-$(document).on(
-    'focus pointerdown',
-    '.change-select',
-    function () {
-        if (
-            !$(this).hasClass(
-                'select2-hidden-accessible'
-            )
-        ) {
-            previousStatus = $(this).val()
-        }
-    }
-)
+            // Handle Select2 change events
+            $(document).on('select2:select', '.change-select', function (e) {
+                currentSelect = $(this);
+                selectedStatus = currentSelect.val();
+                appointmentId = currentSelect.data('id');
+                token = currentSelect.data('token');
 
-function handleAppointmentStatusSelection(
-    selectElement
-) {
-    currentSelect = $(selectElement)
-    selectedStatus = currentSelect.val()
-    appointmentId =
-        currentSelect.data('id')
+                if (selectedStatus === 'cancelled') {
+                let charge = currentSelect.data('charge');
 
-    token = currentSelect.data('token')
+                if (charge > 0) {
+                    $('#cancel_charge_info').html(`{{ __('messages.cancellation_charges_applied') }}: <strong>${currencyFormat(charge)}</strong>`);
+                } else {
+                    $('#cancel_charge_info').html(`{{ __('messages.no_cancellation_charge') }}`);
+                }
+                $('#cancelModal').css('display', 'flex');
+                $('#cancelModal').fadeIn();
+                } else {
+                updateStatus(selectedStatus);
+                }
+            });
 
-    /*
-     * Referral status is saved through the modal,
-     * not through updateStatus().
-     */
-    if (selectedStatus === 'referred') {
-        openReferralModal(
-            appointmentId,
-            currentSelect,
-            previousStatus
-        )
+            // Fallback for regular change events (in case Select2 is not initialized)
+            $(document).on('change', '.change-select', function (e) {
+                // Only handle if Select2 is not initialized
+                if (!$(this).hasClass('select2-hidden-accessible')) {
+                currentSelect = $(this);
+                selectedStatus = currentSelect.val();
+                appointmentId = currentSelect.data('id');
+                token = currentSelect.data('token');
 
-        return
-    }
+                if (selectedStatus === 'cancelled') {
+                    let charge = currentSelect.data('charge');
 
-    if (selectedStatus === 'cancelled') {
-        const charge =
-            Number(
-                currentSelect.data('charge')
-                || 0
-            )
-
-        if (charge > 0) {
-            $('#cancel_charge_info').html(
-                `{{ __('messages.cancellation_charges_applied') }}: ` +
-                `<strong>${currencyFormat(charge)}</strong>`
-            )
-        } else {
-            $('#cancel_charge_info').html(
-                `{{ __('messages.no_cancellation_charge') }}`
-            )
-        }
-
-        $('#cancelModal')
-            .css('display', 'flex')
-            .fadeIn()
-
-        return
-    }
-
-    updateStatus(selectedStatus)
-}
-
-/*
- * Select2 appointment-status handling.
- */
-$(document).on(
-    'select2:select',
-    '.change-select',
-    function () {
-        handleAppointmentStatusSelection(
-            this
-        )
-    }
-)
-
-/*
- * Native-select fallback. It is deliberately disabled
- * when Select2 owns the field, preventing duplicate calls.
- */
-$(document).on(
-    'change',
-    '.change-select',
-    function () {
-        if (
-            $(this).hasClass(
-                'select2-hidden-accessible'
-            )
-        ) {
-            return
-        }
-
-        handleAppointmentStatusSelection(
-            this
-        )
-    }
-)
+                    if (charge > 0) {
+                    $('#cancel_charge_info').html(`{{ __('messages.cancellation_charges_applied') }}: <strong>${currencyFormat(charge)}</strong>`);
+                    } else {
+                    $('#cancel_charge_info').html(`{{ __('messages.no_cancellation_charge') }}`);
+                    }
+                    $('#cancelModal').css('display', 'flex');
+                    e.preventDefault();
+                    currentSelect.blur();
+                    $('#cancelModal').fadeIn();
+                } else {
+                    updateStatus(selectedStatus);
+                }
+                }
+            });
 
             function updateStatus(status, reason = null, charge = 0) {
 
