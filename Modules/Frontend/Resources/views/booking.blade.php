@@ -969,7 +969,7 @@
                 <div class="mt-5">
                     <div id="step-content">
 
-                        <div id="step-content-0" class="step-content">
+                        <div id="step-content-0" class="step-content d-none">
                             @if($hasCategories ?? false)
                                 {{-- Category Selection Step - Server-Side Rendered --}}
                                 @php

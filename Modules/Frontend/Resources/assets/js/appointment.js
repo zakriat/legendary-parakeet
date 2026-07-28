@@ -1003,6 +1003,18 @@ function setNextStep() {
 }
 
 function updateActiveStep() {
+
+  //extra category removel
+  const step0 = document.getElementById('step-content-0')
+  if (step0) {
+    if (hasCategories && currentStep === 0) {
+      step0.classList.remove('d-none')
+    } else {
+      step0.classList.add('d-none')
+    }
+  }
+
+
   const tabsItem = document.querySelectorAll('.appointments-steps-item a')
   const paymentContainer = document.querySelector('.payment-container')
   tabsItem.forEach((tab) => {
