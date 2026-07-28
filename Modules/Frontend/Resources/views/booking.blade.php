@@ -969,7 +969,7 @@
                 <div class="mt-5">
                     <div id="step-content">
 
-                        {{-- <div id="step-content-0" class="step-content">
+                        <div id="step-content-0" class="step-content">
                             @if($hasCategories ?? false)
                                 {{-- Category Selection Step - Server-Side Rendered --}}
                                 @php
@@ -1095,7 +1095,7 @@
                                 </div>
                                 <!-- Content for Step 1 (e.g. Select Clinic) -->
                             @endif
-                        </div> --}}
+                        </div>
 
                         <div id="service-shimmer-loader" class="d-flex gap-3 flex-wrap p-4 d-none">
                              @for ($i = 0; $i < 4; $i++)

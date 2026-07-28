@@ -1002,6 +1002,15 @@ function setNextStep() {
   }
 }
 
+const step0 = document.getElementById('step-content-0')
+if (step0) {
+  if (hasCategories && currentStep === 0) {
+    step0.classList.remove('d-none')
+  } else {
+    step0.classList.add('d-none')
+  }
+}
+
 function updateActiveStep() {
   const tabsItem = document.querySelectorAll('.appointments-steps-item a')
   const paymentContainer = document.querySelector('.payment-container')
