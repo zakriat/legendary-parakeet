@@ -582,7 +582,7 @@ if ($isVideoAppointment) {
             'cancellation_charge' => $request->cancellation_charge_amount ?? 0,
             'user'           => auth()->user()->id,
         ]);
-        $appointment = Appointment::where('id', $id)->with('user', 'doctor')->first();
+        $appointment = Appointment::where('id', $id)->with('user', 'doctor','referral')->first();
         $clinic_data = Clinics::where('id', $appointment->clinic_id)->first();
         $receptionist = Receptionist::with('users')->where('clinic_id',$appointment->clinic_id)->first();
         $startDate = Carbon::parse($appointment['start_date_time']);
@@ -613,6 +613,7 @@ if ($isVideoAppointment) {
         |--------------------------------------------------------------------------
         */
 
+
         $allowedStatuses = Constant::query()
             ->where('type', 'BOOKING_STATUS')
             ->where('status', 1)
@@ -625,6 +626,28 @@ if ($isVideoAppointment) {
                 'message' => 'Invalid appointment status selected.',
             ], 422);
         }
+
+                /*
+        |--------------------------------------------------------------------------
+        | Referred appointments require referral details
+        |--------------------------------------------------------------------------
+        |
+        | The referral modal/controller creates the referral first and then changes
+        | the appointment status. This prevents the normal status endpoint from
+        | marking an appointment as referred without the required information.
+        |
+        */
+        if (
+            $status === 'referred' &&
+            !$appointment->referral()->exists()
+        ) {
+            return response()->json([
+                'status' => false,
+                'message' =>
+                    'Complete the referral form before marking this appointment as referred.',
+            ], 422);
+        }
+
 
         $appointment->status = $status;
 

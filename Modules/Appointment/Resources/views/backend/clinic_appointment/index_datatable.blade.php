@@ -184,6 +184,9 @@
         
         <!-- Include Appointment Details Modal -->
         @include('appointment::backend.appointment.details_modal')
+        @include(
+    'appointment::backend.clinic_appointment.referral_modal'
+)
     @endsection
 
     @push('after-styles')
@@ -202,6 +205,403 @@
         <script src="{{ mix('modules/appointment/script.js') }}"></script>
         <script src="{{ asset('js/form-offcanvas/index.js') }}" defer></script>
         <script src="{{ asset('js/form-modal/index.js') }}" defer></script>
+
+        <script>
+    let referralStatusSelect = null
+    let referralPreviousStatus = null
+    let referralDoctorsLoaded = false
+
+    const referralRoutes = {
+        doctors:
+            @json(route(
+                'backend.appointments.referral.doctors'
+            )),
+
+        showTemplate:
+            @json(route(
+                'backend.appointments.referral.show',
+                ['appointment' => '__APPOINTMENT__']
+            )),
+
+        storeTemplate:
+            @json(route(
+                'backend.appointments.referral.store',
+                ['appointment' => '__APPOINTMENT__']
+            )),
+    }
+
+    function referralUrl(template, appointmentId) {
+        return template.replace(
+            '__APPOINTMENT__',
+            appointmentId
+        )
+    }
+
+    function selectedReferralType() {
+        return document.querySelector(
+            'input[name="referral_type"]:checked'
+        )?.value || 'external'
+    }
+
+    function updateReferralTypeInterface() {
+        const internal =
+            selectedReferralType() === 'internal'
+
+        document
+            .getElementById('internal-doctor-section')
+            ?.classList.toggle('d-none', !internal)
+
+        document
+            .getElementById(
+                'receiving-doctor-name-section'
+            )
+            ?.classList.toggle('d-none', internal)
+
+        const internalDoctorInput =
+            document.getElementById(
+                'receiving_doctor_id'
+            )
+
+        const externalNameInput =
+            document.getElementById(
+                'receiving_doctor_name'
+            )
+
+        if (internalDoctorInput) {
+            internalDoctorInput.required = internal
+        }
+
+        if (externalNameInput) {
+            externalNameInput.required = !internal
+        }
+    }
+
+    async function loadReferralDoctors() {
+        if (referralDoctorsLoaded) return
+
+        const response = await fetch(
+            referralRoutes.doctors,
+            {
+                headers: {
+                    Accept: 'application/json',
+                },
+            }
+        )
+
+        if (!response.ok) {
+            throw new Error(
+                'Doctors could not be loaded.'
+            )
+        }
+
+        const result = await response.json()
+
+        const select = document.getElementById(
+            'receiving_doctor_id'
+        )
+
+        result.doctors.forEach(doctor => {
+            const option =
+                document.createElement('option')
+
+            option.value = doctor.id
+            option.textContent =
+                doctor.name +
+                (doctor.email
+                    ? ` — ${doctor.email}`
+                    : '')
+
+            option.dataset.name = doctor.name
+            option.dataset.email =
+                doctor.email || ''
+
+            option.dataset.phone =
+                doctor.phone || ''
+
+            select.appendChild(option)
+        })
+
+        referralDoctorsLoaded = true
+    }
+
+    function clearReferralForm() {
+        const form = document.getElementById(
+            'appointment-referral-form'
+        )
+
+        form.reset()
+
+        document.getElementById(
+            'referral-form-errors'
+        ).classList.add('d-none')
+
+        document.getElementById(
+            'referral-form-errors'
+        ).innerHTML = ''
+
+        document.querySelector(
+            'input[name="referral_type"]' +
+            '[value="external"]'
+        ).checked = true
+
+        updateReferralTypeInterface()
+    }
+
+    function fillReferralForm(referral) {
+        if (!referral) return
+
+        const fields = [
+            'referral_type',
+            'receiving_doctor_id',
+            'receiving_doctor_name',
+            'receiving_doctor_speciality',
+            'receiving_organisation_name',
+            'receiving_doctor_email',
+            'receiving_doctor_phone',
+            'receiving_doctor_address',
+            'referral_reason',
+            'clinical_summary',
+            'diagnosis',
+            'requested_action',
+            'urgency',
+        ]
+
+        fields.forEach(field => {
+            if (field === 'referral_type') {
+                const radio = document.querySelector(
+                    `input[name="referral_type"]` +
+                    `[value="${referral[field]}"]`
+                )
+
+                if (radio) radio.checked = true
+
+                return
+            }
+
+            const input =
+                document.getElementById(field)
+
+            if (input) {
+                input.value = referral[field] ?? ''
+            }
+        })
+
+        updateReferralTypeInterface()
+    }
+
+    window.openReferralModal =
+        async function (
+            appointmentId,
+            statusSelect = null,
+            previousStatus = null
+        ) {
+            referralStatusSelect = statusSelect
+            referralPreviousStatus = previousStatus
+
+            clearReferralForm()
+
+            document.getElementById(
+                'referral-appointment-id'
+            ).value = appointmentId
+
+            try {
+                await loadReferralDoctors()
+
+                const response = await fetch(
+                    referralUrl(
+                        referralRoutes.showTemplate,
+                        appointmentId
+                    ),
+                    {
+                        headers: {
+                            Accept: 'application/json',
+                        },
+                    }
+                )
+
+                if (response.ok) {
+                    const result =
+                        await response.json()
+
+                    fillReferralForm(result.referral)
+                }
+            } catch (error) {
+                console.error(error)
+            }
+
+            const modalElement =
+                document.getElementById(
+                    'appointment-referral-modal'
+                )
+
+            bootstrap.Modal
+                .getOrCreateInstance(modalElement)
+                .show()
+        }
+
+    document
+        .querySelectorAll('.referral-type-input')
+        .forEach(input => {
+            input.addEventListener(
+                'change',
+                updateReferralTypeInterface
+            )
+        })
+
+    document
+        .getElementById('receiving_doctor_id')
+        ?.addEventListener('change', function () {
+            const option =
+                this.options[this.selectedIndex]
+
+            if (!option?.value) return
+
+            document.getElementById(
+                'receiving_doctor_name'
+            ).value = option.dataset.name || ''
+
+            document.getElementById(
+                'receiving_doctor_email'
+            ).value = option.dataset.email || ''
+
+            document.getElementById(
+                'receiving_doctor_phone'
+            ).value = option.dataset.phone || ''
+        })
+
+    document
+        .getElementById(
+            'appointment-referral-form'
+        )
+        ?.addEventListener(
+            'submit',
+            async function (event) {
+                event.preventDefault()
+
+                const appointmentId =
+                    document.getElementById(
+                        'referral-appointment-id'
+                    ).value
+
+                const button =
+                    document.getElementById(
+                        'save-appointment-referral'
+                    )
+
+                const errorBox =
+                    document.getElementById(
+                        'referral-form-errors'
+                    )
+
+                button.disabled = true
+                button.textContent = 'Saving...'
+                errorBox.classList.add('d-none')
+                errorBox.innerHTML = ''
+
+                try {
+                    const response = await fetch(
+                        referralUrl(
+                            referralRoutes.storeTemplate,
+                            appointmentId
+                        ),
+                        {
+                            method: 'POST',
+                            headers: {
+                                Accept: 'application/json',
+                                'X-CSRF-TOKEN':
+                                    document.querySelector(
+                                        'meta[name="csrf-token"]'
+                                    ).content,
+                            },
+                            body: new FormData(this),
+                        }
+                    )
+
+                    const result =
+                        await response.json()
+
+                    if (!response.ok) {
+                        const messages = result.errors
+                            ? Object.values(result.errors)
+                                .flat()
+                            : [
+                                result.message ||
+                                'The referral could not be saved.',
+                            ]
+
+                        errorBox.innerHTML =
+                            messages
+                                .map(message =>
+                                    `<div>${message}</div>`
+                                )
+                                .join('')
+
+                        errorBox.classList.remove(
+                            'd-none'
+                        )
+
+                        return
+                    }
+
+                    bootstrap.Modal
+                        .getInstance(
+                            document.getElementById(
+                                'appointment-referral-modal'
+                            )
+                        )
+                        ?.hide()
+
+                    if (
+                        typeof window.renderedDataTable
+                        !== 'undefined'
+                    ) {
+                        window.renderedDataTable
+                            .ajax.reload(null, false)
+                    } else if (
+                        $.fn.DataTable.isDataTable(
+                            '#datatable'
+                        )
+                    ) {
+                        $('#datatable')
+                            .DataTable()
+                            .ajax.reload(null, false)
+                    } else {
+                        window.location.reload()
+                    }
+                } catch (error) {
+                    errorBox.textContent =
+                        'The referral could not be saved.'
+
+                    errorBox.classList.remove('d-none')
+                } finally {
+                    button.disabled = false
+                    button.textContent =
+                        'Save referral'
+                }
+            }
+        )
+
+    document
+        .getElementById(
+            'appointment-referral-modal'
+        )
+        ?.addEventListener(
+            'hidden.bs.modal',
+            function () {
+                if (
+                    referralStatusSelect &&
+                    referralPreviousStatus
+                ) {
+                    $(referralStatusSelect)
+                        .val(referralPreviousStatus)
+                        .trigger('change.select2')
+                }
+
+                referralStatusSelect = null
+                referralPreviousStatus = null
+            }
+        )
+</script>
 
         <!-- DataTables Core and Extensions -->
         <script type="text/javascript" src="{{ asset('vendor/datatable/datatables.min.js') }}"></script>

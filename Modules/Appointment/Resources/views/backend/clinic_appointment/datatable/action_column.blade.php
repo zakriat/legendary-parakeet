@@ -192,4 +192,41 @@
     @endforeach
 @endif
 
+
+@if($data->status === 'referred')
+    @if($data->referral)
+        <button
+            type="button"
+            class="btn btn-sm btn-outline-dark"
+            onclick="openReferralModal({{ $data->id }})"
+            title="View or edit referral"
+            aria-label="View or edit referral for appointment {{ $data->id }}"
+        >
+            <i class="fa-solid fa-user-doctor"></i>
+            Referral
+        </button>
+
+        <a
+            href="{{ route(
+                'backend.appointments.referral.pdf',
+                $data->id
+            ) }}"
+            class="btn btn-sm btn-dark"
+            title="Download referral PDF"
+            aria-label="Download referral PDF for appointment {{ $data->id }}"
+        >
+            <i class="fa-solid fa-file-pdf"></i>
+            PDF
+        </a>
+    @else
+        <button
+            type="button"
+            class="btn btn-sm btn-outline-dark"
+            onclick="openReferralModal({{ $data->id }})"
+        >
+            Complete referral
+        </button>
+    @endif
+@endif
+
 </div>

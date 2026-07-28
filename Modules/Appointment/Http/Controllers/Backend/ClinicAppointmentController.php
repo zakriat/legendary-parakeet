@@ -208,7 +208,7 @@ class ClinicAppointmentController extends Controller
         $module_name = $this->module_name;
         $userId = auth()->id();
         $query = Appointment::SetRole(auth()->user())
-            ->with('payment', 'commissionsdata', 'patientEncounter', 'cliniccenter', 'doctor')
+            ->with('payment', 'commissionsdata', 'patientEncounter', 'cliniccenter', 'doctor', 'referral.receivingDoctor')
             ->withCount('linkedBloodTests')
             ->where(function($q) {
                 $q->where('type', 'appointment')

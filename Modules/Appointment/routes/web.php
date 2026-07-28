@@ -16,6 +16,8 @@ use Modules\Customer\Http\Controllers\Backend\CustomersController;
 use Modules\Tax\Http\Controllers\Backend\TaxesController;
 use Modules\Clinic\Http\Controllers\DoctorController;
 
+use Modules\Appointment\Http\Controllers\Backend\AppointmentReferralController;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -64,7 +66,7 @@ Route::group(['prefix' => 'app', 'as' => 'backend.', 'middleware' => ['auth','au
         Route::post('save-payment', [AppointmentsController::class, 'savePayment'])->name('save_payment');
         Route::post('other-patient', [AppointmentsController::class, 'otherpatient'])->name('other_patient');
         Route::get('other-patientlist', [AppointmentsController::class, 'otherpatientlist'])->name('other_patientlist');
-
+        
        
         // Route::post('/update-status/{id}', [AppointmentsController::class, 'updateStatus'])->name('updateStatus');
     });
@@ -81,6 +83,10 @@ Route::group(['prefix' => 'app', 'as' => 'backend.', 'middleware' => ['auth','au
     Route::resource("medicines", MedicinesController::class);
 
     Route::group(['prefix' => 'appointments', 'as' => 'appointments.'], function () {
+
+
+           
+
 
 
         Route::get("index_list", [ClinicAppointmentController::class, 'index_list'])->name("index_list");
@@ -135,6 +141,39 @@ Route::group(['prefix' => 'app', 'as' => 'backend.', 'middleware' => ['auth','au
         Route::get('clinicAppointmentDetail/doctor/get-available-slot', [DoctorController::class, 'availableSlot'])->name('clinicAppointmentDetail.doctor.availableSlot');
     });
 
+
+     Route::get( 
+                'appointments/referral/doctors',
+                [
+                    AppointmentReferralController::class,
+                    'doctors',
+                ]
+            )->name('appointments.referral.doctors');
+
+            Route::get(
+                'appointments/{appointment}/referral',
+                [
+                    AppointmentReferralController::class,
+                    'show',
+                ]
+            )->name('appointments.referral.show');
+
+            Route::post(
+                'appointments/{appointment}/referral',
+                [
+                    AppointmentReferralController::class,
+                    'store',
+                ]
+            )->name('appointments.referral.store');
+
+            Route::get(
+                'appointments/{appointment}/referral/pdf',
+                [
+                    AppointmentReferralController::class,
+                    'downloadPdf',
+                ]
+            )->name('appointments.referral.pdf');
+            
     // Blood Tests Routes (Separate from Appointments)
     Route::group(['prefix' => 'blood-tests', 'as' => 'blood-tests.'], function () {
         Route::get("/", [ClinicAppointmentController::class, 'bloodTestsIndex'])->name("index");

@@ -20,6 +20,8 @@ use Modules\Clinic\Models\ClinicsCategory;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
+use Illuminate\Database\Eloquent\Relations\HasOne;
+
 class Appointment extends BaseModel
 {
     use HasFactory;
@@ -81,6 +83,14 @@ class Appointment extends BaseModel
      * @return \Illuminate\Database\Eloquent\Factories\Factory
      */
 
+
+    public function referral(): HasOne
+    {
+        return $this->hasOne(
+            AppointmentReferral::class,
+            'appointment_id'
+        );
+    }
 
     // price changes according to time
 
