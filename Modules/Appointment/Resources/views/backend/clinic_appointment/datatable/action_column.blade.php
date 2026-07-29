@@ -1,4 +1,7 @@
-<div class="text-end d-flex gap-3 align-items-center">
+<!-- <div class="text-end d-flex gap-3 align-items-center"> -->
+<div
+    class="appointment-actions"
+    data-appointment-id="{{ $data->id }}">
    @php
     $appointmentDate = \Carbon\Carbon::parse(
         $data->appointment_date
@@ -136,7 +139,7 @@
     @endif --}}
 
     <!-- <button type='button' data-assign-module="{{$data->id}}" data-assign-target='#appointment-offcanvas' data-assign-event='appointment-details' class='btn text-primary p-0 fs-5' data-bs-toggle='tooltip' title='Clinic Session'><i class="fa-solid fa-eye"></i></a> -->
-    </button>
+    <!-- </button> -->
     @if($pay_status == 1 && $data->status == 'checkout')
     <a href="{{ route('backend.appointments.invoice_detail', ['id' => $data->id]) }}" data-type="ajax" class='btn text-info p-0 fs-5' data-bs-toggle="tooltip" title="{{ __('clinic.invoice_detail') }}">
     <i class="ph ph-file-pdf"></i>

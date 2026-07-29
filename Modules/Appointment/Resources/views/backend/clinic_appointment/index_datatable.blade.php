@@ -200,6 +200,132 @@
             pointer-events: none;
             opacity: 0.5;
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Compact appointment actions
+        |--------------------------------------------------------------------------
+        */
+
+        .appointment-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: nowrap;
+            gap: 0.5rem;
+            min-width: max-content;
+        }
+
+        .appointment-actions > a,
+        .appointment-actions > button,
+        .appointment-actions > span,
+        .appointment-actions > form,
+        .appointment-actions > .appointment-more-actions {
+            flex: 0 0 auto;
+        }
+
+        .appointment-more-actions {
+            position: relative;
+        }
+
+        .appointment-more-actions > .dropdown-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            min-width: 38px;
+            height: 36px;
+            padding: 0;
+            color: #111;
+            background-color: #fff;
+            border: 1px solid #777;
+            border-radius: 0.35rem;
+        }
+
+        .appointment-more-actions > .dropdown-toggle:hover,
+        .appointment-more-actions > .dropdown-toggle:focus,
+        .appointment-more-actions > .dropdown-toggle[aria-expanded="true"] {
+            color: #fff;
+            background-color: #111;
+            border-color: #111;
+        }
+
+        .appointment-more-actions > .dropdown-toggle::after {
+            display: none;
+        }
+
+        .appointment-more-actions .dropdown-menu {
+            min-width: 225px;
+            max-width: 300px;
+            padding: 0.4rem;
+            color: #111;
+            background-color: #fff;
+            border: 1px solid #666;
+            border-radius: 0.4rem;
+            box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.2);
+            z-index: 1080;
+        }
+
+        .appointment-more-actions .appointment-dropdown-item {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            min-height: 42px;
+            padding: 0.4rem 0.5rem;
+            color: #111;
+            background-color: #fff;
+            border-radius: 0.3rem;
+        }
+
+        .appointment-more-actions .appointment-dropdown-item:hover,
+        .appointment-more-actions .appointment-dropdown-item:focus-within {
+            background-color: #eee;
+        }
+
+        .appointment-more-actions .appointment-dropdown-item > a,
+        .appointment-more-actions .appointment-dropdown-item > button,
+        .appointment-more-actions .appointment-dropdown-item > span {
+            flex: 0 0 auto;
+            margin: 0;
+        }
+
+        .appointment-more-actions .appointment-dropdown-item > form {
+            flex: 0 0 auto;
+            margin: 0;
+        }
+
+        .appointment-more-actions .appointment-dropdown-label {
+            flex: 1 1 auto;
+            margin-left: 0.6rem;
+            color: #111;
+            font-size: 0.875rem;
+            font-weight: 500;
+            line-height: 1.25;
+            white-space: normal;
+            cursor: pointer;
+        }
+
+        /*
+        * Keep dropdowns visible beyond the action cell.
+        */
+        #datatable td:last-child {
+            overflow: visible;
+            white-space: nowrap;
+        }
+
+        #datatable .dropdown-menu.show {
+            display: block;
+        }
+
+        @media (max-width: 767.98px) {
+            .appointment-actions {
+                gap: 0.35rem;
+            }
+
+            .appointment-more-actions .dropdown-menu {
+                min-width: 200px;
+            }
+        }
     </style>
     @push('after-scripts')
         <script src="{{ mix('modules/appointment/script.js') }}"></script>
@@ -909,6 +1035,266 @@
         <script>
             const userRoles = @json(auth()->user()->roles->pluck('name')->toArray());
         </script>
+
+                    <script>
+                        /*
+                        * Number of actions that remain directly visible.
+                        * All remaining actions are moved into More.
+                        */
+                        const appointmentVisibleActionLimit = 3
+
+                        function appointmentActionLabel(
+                            action
+                        ) {
+                            const labelledElement =
+                                action.matches(
+                                    '[title], [aria-label]'
+                                )
+                                    ? action
+                                    : action.querySelector(
+                                        '[title], [aria-label]'
+                                    )
+
+                            const title =
+                                labelledElement?.getAttribute(
+                                    'title'
+                                )?.trim()
+
+                            const ariaLabel =
+                                labelledElement?.getAttribute(
+                                    'aria-label'
+                                )?.trim()
+
+                            const visibleText =
+                                action.textContent
+                                    ?.replace(/\s+/g, ' ')
+                                    .trim()
+
+                            return (
+                                title ||
+                                ariaLabel ||
+                                visibleText ||
+                                'Appointment action'
+                            )
+                        }
+
+                        function appointmentActionClickable(
+                            action
+                        ) {
+                            if (
+                                action.matches('a, button')
+                            ) {
+                                return action
+                            }
+
+                            return action.querySelector(
+                                'a, button'
+                            )
+                        }
+
+                        function createAppointmentMoreMenu(
+                            appointmentId
+                        ) {
+                            const wrapper =
+                                document.createElement('div')
+
+                            wrapper.className =
+                                'dropdown dropstart appointment-more-actions'
+
+                            const toggle =
+                                document.createElement('button')
+
+                            toggle.type = 'button'
+                            toggle.className =
+                                'btn dropdown-toggle'
+
+                            toggle.id =
+                                `appointment-more-${appointmentId}`
+
+                            toggle.title =
+                                'More appointment actions'
+
+                            toggle.setAttribute(
+                                'aria-label',
+                                'More appointment actions'
+                            )
+
+                            toggle.setAttribute(
+                                'aria-expanded',
+                                'false'
+                            )
+
+                            toggle.setAttribute(
+                                'data-bs-toggle',
+                                'dropdown'
+                            )
+
+                            toggle.setAttribute(
+                                'data-bs-auto-close',
+                                'outside'
+                            )
+
+                            toggle.setAttribute(
+                                'data-bs-boundary',
+                                'viewport'
+                            )
+
+                            toggle.innerHTML = `
+                                <i
+                                    class="ph ph-dots-three-vertical fs-5"
+                                    aria-hidden="true"
+                                ></i>
+
+                                <span class="visually-hidden">
+                                    More appointment actions
+                                </span>
+                            `
+
+                            const menu =
+                                document.createElement('ul')
+
+                            menu.className =
+                                'dropdown-menu dropdown-menu-end'
+
+                            menu.setAttribute(
+                                'aria-labelledby',
+                                toggle.id
+                            )
+
+                            wrapper.appendChild(toggle)
+                            wrapper.appendChild(menu)
+
+                            return {
+                                wrapper,
+                                menu,
+                            }
+                        }
+
+                        function moveAppointmentActionToMenu(
+                            action,
+                            menu
+                        ) {
+                            const item =
+                                document.createElement('li')
+
+                            item.className =
+                                'appointment-dropdown-item'
+
+                            const label =
+                                document.createElement('span')
+
+                            label.className =
+                                'appointment-dropdown-label'
+
+                            label.textContent =
+                                appointmentActionLabel(action)
+
+                            /*
+                            * Move the real element, rather than cloning it.
+                            * Existing URLs, onclick handlers, AJAX attributes
+                            * and permission-related behavior are retained.
+                            */
+                            item.appendChild(action)
+                            item.appendChild(label)
+                            menu.appendChild(item)
+
+                            /*
+                            * Allow clicking the readable label as well as
+                            * the original icon or button.
+                            */
+                            label.addEventListener(
+                                'click',
+                                function () {
+                                    const clickable =
+                                        appointmentActionClickable(
+                                            action
+                                        )
+
+                                    clickable?.click()
+                                }
+                            )
+                        }
+
+                        function collapseAppointmentActions() {
+                            document
+                                .querySelectorAll(
+                                    '.appointment-actions'
+                                )
+                                .forEach(container => {
+                                    /*
+                                    * Avoid processing an already-collapsed
+                                    * row more than once.
+                                    */
+                                    if (
+                                        container.dataset
+                                            .actionsCollapsed ===
+                                        'true'
+                                    ) {
+                                        return
+                                    }
+
+                                    /*
+                                    * Every direct HTML child represents one
+                                    * available action. Blade/PHP directives
+                                    * do not appear as browser elements.
+                                    */
+                                    const actions =
+                                        Array.from(
+                                            container.children
+                                        ).filter(element => {
+                                            return !element.classList
+                                                .contains(
+                                                    'appointment-more-actions'
+                                                )
+                                        })
+
+                                    if (
+                                        actions.length <=
+                                        appointmentVisibleActionLimit
+                                    ) {
+                                        container.dataset
+                                            .actionsCollapsed =
+                                            'true'
+
+                                        return
+                                    }
+
+                                    const appointmentId =
+                                        container.dataset
+                                            .appointmentId ||
+                                        Math.random()
+                                            .toString(36)
+                                            .slice(2)
+
+                                    const moreMenu =
+                                        createAppointmentMoreMenu(
+                                            appointmentId
+                                        )
+
+                                    actions
+                                        .slice(
+                                            appointmentVisibleActionLimit
+                                        )
+                                        .forEach(action => {
+                                            moveAppointmentActionToMenu(
+                                                action,
+                                                moreMenu.menu
+                                            )
+                                        })
+
+                                    container.appendChild(
+                                        moreMenu.wrapper
+                                    )
+
+                                    container.dataset
+                                        .actionsCollapsed =
+                                        'true'
+                                })
+                        }
+                    </script>
+
+
+
         <script type="text/javascript" defer>
             const columns = [
                 @unless (auth()->user()->hasRole('doctor') || auth()->user()->hasRole('receptionist') || auth()->user()->hasRole('user'))
@@ -1004,7 +1390,7 @@
                     orderable: true,
                     searchable: true,
                     title: "{{ __('appointment.lbl_status') }}",
-                    width: '5%',
+                    width: '12%',
                     createdCell: function(td, cellData, rowData, row, col) {
                         if (userRoles.includes('user')) {
                             $(td).addClass('disabled-cell');
@@ -1075,17 +1461,42 @@
                             status: $('#appointment_status').val()
                         }
                     },
-                    drawCallback: () => {
-                        // Reinitialize select2 for dynamically created elements in DataTable
-                        $('.change-select').each(function() {
-                            if (!$(this).hasClass('select2-hidden-accessible')) {
-                                $(this).select2({
-                                    width: '100%',
-                                    minimumResultsForSearch: -1
-                                });
-                            }
-                        });
-                    }
+                  drawCallback: () => {
+                            /*
+                            * Reinitialize Select2 for status fields generated
+                            * by the latest DataTable draw.
+                            */
+                            $('.change-select').each(function () {
+                                if (
+                                    !$(this).hasClass(
+                                        'select2-hidden-accessible'
+                                    )
+                                ) {
+                                    $(this).select2({
+                                        width: '100%',
+                                        minimumResultsForSearch: -1,
+                                    })
+                                }
+                            })
+
+                            /*
+                            * Collapse action columns after every AJAX load,
+                            * search, sort, filter and pagination event.
+                            */
+                            collapseAppointmentActions()
+
+                            /*
+                            * Initialize tooltips inside newly rendered rows.
+                            */
+                            document
+                                .querySelectorAll(
+                                    '#datatable [data-bs-toggle="tooltip"]'
+                                )
+                                .forEach(element => {
+                                    bootstrap.Tooltip
+                                        .getOrCreateInstance(element)
+                                })
+                        }
                 });
 
                 // Add change event listeners for all filter dropdowns

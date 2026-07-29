@@ -333,7 +333,7 @@
                     id="assessment-heading"
                     class="clinical-plan__section-title"
                 >
-                    Assessment and plan
+                    Assessment and Treatment plan
                 </h3>
 
                 <div class="row g-4">

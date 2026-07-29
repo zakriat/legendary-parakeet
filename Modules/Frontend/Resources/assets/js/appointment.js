@@ -2078,36 +2078,506 @@ function capitalizeFirstLetter(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+// upadted data feilds start
 
+
+// updated data feilds ends
 // new data feilds start
 
-function appendClinicalHistoryToFormData(formData) {
-  const container = document.getElementById('patient-clinical-history')
+// Repeatable clinical-history fields start
+
+let medicationRowIndex = 1
+let allergyRowIndex = 1
+
+function medicationRowTemplate(index) {
+  return `
+    <div
+      class="clinical-repeat-row medication-row"
+      data-index="${index}"
+    >
+      <div class="row g-2">
+        <div class="col-lg-3 col-md-6">
+          <label
+            class="form-label text-dark"
+            for="medication-name-${index}"
+          >
+            Medication name
+          </label>
+
+          <input
+            type="text"
+            class="form-control medication-name"
+            id="medication-name-${index}"
+            name="medications[${index}][medication_name]"
+            maxlength="255"
+            placeholder="Medication name"
+          >
+        </div>
+
+        <div class="col-lg-2 col-md-6">
+          <label
+            class="form-label text-dark"
+            for="medication-dose-${index}"
+          >
+            Dose
+          </label>
+
+          <input
+            type="text"
+            class="form-control"
+            id="medication-dose-${index}"
+            name="medications[${index}][dose]"
+            maxlength="100"
+            placeholder="For example: 5 mg"
+          >
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+          <label
+            class="form-label text-dark"
+            for="medication-frequency-${index}"
+          >
+            Frequency
+          </label>
+
+          <input
+            type="text"
+            class="form-control"
+            id="medication-frequency-${index}"
+            name="medications[${index}][frequency]"
+            maxlength="150"
+            placeholder="For example: Twice daily"
+          >
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+          <label
+            class="form-label text-dark"
+            for="medication-notes-${index}"
+          >
+            Notes
+          </label>
+
+          <input
+            type="text"
+            class="form-control"
+            id="medication-notes-${index}"
+            name="medications[${index}][notes]"
+            maxlength="500"
+            placeholder="Optional notes"
+          >
+        </div>
+
+        <div class="col-lg-1 col-md-12 d-flex align-items-end">
+          <button
+            type="button"
+            class="btn btn-outline-danger remove-clinical-row"
+            title="Remove medication"
+            aria-label="Remove medication"
+          >
+            <i class="ph ph-trash" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  `
+}
+
+function allergyRowTemplate(index) {
+  return `
+    <div
+      class="clinical-repeat-row allergy-row"
+      data-index="${index}"
+    >
+      <div class="row g-2">
+        <div class="col-lg-3 col-md-6">
+          <label
+            class="form-label text-dark"
+            for="allergen-${index}"
+          >
+            Allergy
+          </label>
+
+          <input
+            type="text"
+            class="form-control allergy-name"
+            id="allergen-${index}"
+            name="allergies[${index}][allergen]"
+            maxlength="255"
+            placeholder="For example: Penicillin"
+          >
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+          <label
+            class="form-label text-dark"
+            for="allergy-reaction-${index}"
+          >
+            Reaction
+          </label>
+
+          <input
+            type="text"
+            class="form-control"
+            id="allergy-reaction-${index}"
+            name="allergies[${index}][reaction]"
+            maxlength="255"
+            placeholder="For example: Rash"
+          >
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+          <label
+            class="form-label text-dark"
+            for="allergy-severity-${index}"
+          >
+            Severity
+          </label>
+
+          <select
+            class="form-select"
+            id="allergy-severity-${index}"
+            name="allergies[${index}][severity]"
+          >
+            <option value="unknown">Unknown</option>
+            <option value="mild">Mild</option>
+            <option value="moderate">Moderate</option>
+            <option value="severe">Severe</option>
+            <option value="life_threatening">
+              Life threatening
+            </option>
+          </select>
+        </div>
+
+        <div class="col-lg-2 col-md-6">
+          <label
+            class="form-label text-dark"
+            for="allergy-notes-${index}"
+          >
+            Notes
+          </label>
+
+          <input
+            type="text"
+            class="form-control"
+            id="allergy-notes-${index}"
+            name="allergies[${index}][notes]"
+            maxlength="500"
+            placeholder="Optional"
+          >
+        </div>
+
+        <div class="col-lg-1 col-md-12 d-flex align-items-end">
+          <button
+            type="button"
+            class="btn btn-outline-danger remove-clinical-row"
+            title="Remove allergy"
+            aria-label="Remove allergy"
+          >
+            <i class="ph ph-trash" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  `
+}
+
+function addMedicationRow() {
+  const container = document.getElementById(
+    'medication-rows'
+  )
 
   if (!container) return
 
-  container.querySelectorAll('[name]').forEach((input) => {
-    // Ignore unchecked checkboxes and radio buttons
-    if (
-      (input.type === 'checkbox' || input.type === 'radio') &&
-      !input.checked
-    ) {
-      return
-    }
+  const index = medicationRowIndex
 
-    const value =
-      typeof input.value === 'string'
-        ? input.value.trim()
-        : input.value
+  container.insertAdjacentHTML(
+    'beforeend',
+    medicationRowTemplate(index)
+  )
 
-    // Ignore empty clinical fields
-    if (value === '' || value === null || value === undefined) {
-      return
-    }
+  medicationRowIndex += 1
 
-    formData.append(input.name, value)
-  })
+  document
+    .getElementById(
+      `medication-name-${index}`
+    )
+    ?.focus()
 }
+
+function addAllergyRow() {
+  const container = document.getElementById(
+    'allergy-rows'
+  )
+
+  if (!container) return
+
+  const index = allergyRowIndex
+
+  container.insertAdjacentHTML(
+    'beforeend',
+    allergyRowTemplate(index)
+  )
+
+  allergyRowIndex += 1
+
+  document
+    .getElementById(`allergen-${index}`)
+    ?.focus()
+}
+
+function clearClinicalRow(row) {
+  row
+    .querySelectorAll(
+      'input:not([type="checkbox"]):not([type="radio"]), textarea'
+    )
+    .forEach(input => {
+      input.value = ''
+    })
+
+  row
+    .querySelectorAll('select')
+    .forEach(select => {
+      select.selectedIndex = 0
+    })
+}
+
+function handleClinicalRowRemoval(event) {
+  const removeButton = event.target.closest(
+    '.remove-clinical-row'
+  )
+
+  if (!removeButton) return
+
+  const row = removeButton.closest(
+    '.clinical-repeat-row'
+  )
+
+  if (!row) return
+
+  const container = row.parentElement
+
+  const rows = container.querySelectorAll(
+    '.clinical-repeat-row'
+  )
+
+  /*
+   * Keep one available row instead of leaving
+   * the patient with no fields.
+   */
+  if (rows.length === 1) {
+    clearClinicalRow(row)
+    return
+  }
+
+  row.remove()
+}
+
+function updateHeightInCentimetres() {
+  const valueInput = document.getElementById(
+    'observation-height-value'
+  )
+
+  const unitInput = document.getElementById(
+    'observation-height-unit'
+  )
+
+  const centimetreInput = document.getElementById(
+    'observation-height-cm'
+  )
+
+  const preview = document.getElementById(
+    'height-conversion-preview'
+  )
+
+  if (
+    !valueInput ||
+    !unitInput ||
+    !centimetreInput
+  ) {
+    return
+  }
+
+  const enteredValue = Number(
+    valueInput.value
+  )
+
+  if (
+    valueInput.value.trim() === '' ||
+    !Number.isFinite(enteredValue) ||
+    enteredValue <= 0
+  ) {
+    centimetreInput.value = ''
+
+    if (preview) {
+      preview.textContent = ''
+    }
+
+    return
+  }
+
+  const heightCm =
+    unitInput.value === 'm'
+      ? enteredValue * 100
+      : enteredValue
+
+  centimetreInput.value =
+    Number(heightCm.toFixed(2))
+
+  if (!preview) return
+
+  if (unitInput.value === 'm') {
+    preview.textContent =
+      `${enteredValue} m = ` +
+      `${centimetreInput.value} cm`
+  } else {
+    preview.textContent =
+      `${enteredValue} cm = ` +
+      `${(heightCm / 100).toFixed(2)} m`
+  }
+}
+
+function initializeRepeatableClinicalHistory() {
+  document
+    .getElementById('add-medication-row')
+    ?.addEventListener(
+      'click',
+      addMedicationRow
+    )
+
+  document
+    .getElementById('add-allergy-row')
+    ?.addEventListener(
+      'click',
+      addAllergyRow
+    )
+
+  document.addEventListener(
+    'click',
+    handleClinicalRowRemoval
+  )
+
+  document
+    .getElementById(
+      'observation-height-value'
+    )
+    ?.addEventListener(
+      'input',
+      updateHeightInCentimetres
+    )
+
+  document
+    .getElementById(
+      'observation-height-unit'
+    )
+    ?.addEventListener(
+      'change',
+      updateHeightInCentimetres
+    )
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener(
+    'DOMContentLoaded',
+    initializeRepeatableClinicalHistory,
+    { once: true }
+  )
+} else {
+  initializeRepeatableClinicalHistory()
+}
+
+function appendClinicalHistoryToFormData(
+  formData
+) {
+  const container = document.getElementById(
+    'patient-clinical-history'
+  )
+
+  if (!container) return
+
+  /*
+   * Update the hidden height_cm field before
+   * collecting the clinical information.
+   */
+  updateHeightInCentimetres()
+
+  container
+    .querySelectorAll('[name]')
+    .forEach(input => {
+      const medicationRow = input.closest(
+        '.medication-row'
+      )
+
+      if (medicationRow) {
+        const medicationName =
+          medicationRow
+            .querySelector(
+              '.medication-name'
+            )
+            ?.value
+            ?.trim()
+
+        /*
+         * Do not send a blank medication row.
+         */
+        if (!medicationName) {
+          return
+        }
+      }
+
+      const allergyRow = input.closest(
+        '.allergy-row'
+      )
+
+      if (allergyRow) {
+        const allergyName =
+          allergyRow
+            .querySelector(
+              '.allergy-name'
+            )
+            ?.value
+            ?.trim()
+
+        /*
+         * This also prevents sending only
+         * severity=unknown for an empty row.
+         */
+        if (!allergyName) {
+          return
+        }
+      }
+
+      if (
+        (
+          input.type === 'checkbox' ||
+          input.type === 'radio'
+        ) &&
+        !input.checked
+      ) {
+        return
+      }
+
+      const value =
+        typeof input.value === 'string'
+          ? input.value.trim()
+          : input.value
+
+      if (
+        value === '' ||
+        value === null ||
+        value === undefined
+      ) {
+        return
+      }
+
+      formData.append(
+        input.name,
+        value
+      )
+    })
+}
+
+// Repeatable clinical-history fields end
 // new data feilds ends
 
 async function submitForm() {

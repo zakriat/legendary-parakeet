@@ -520,82 +520,254 @@
 
                                         <hr>
 
-                                        <h6>Current medication</h6>
+                                       {{-- Repeatable current medication --}}
+                                        <div class="clinical-history-section">
+                                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                                                <div>
+                                                    <h6 class="mb-1 text-dark">
+                                                        Current medication
+                                                    </h6>
 
-                                        <div class="row g-2">
-                                            <div class="col-md-4">
-                                                <input
-                                                    type="text"
-                                                    class="form-control"
-                                                    name="medications[0][medication_name]"
-                                                    placeholder="Medication name"
+                                                    <small class="text-dark">
+                                                        Add all medication currently being taken.
+                                                    </small>
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-sm btn-outline-dark"
+                                                    id="add-medication-row"
                                                 >
+                                                    <i class="ph ph-plus me-1" aria-hidden="true"></i>
+                                                    Add medication
+                                                </button>
                                             </div>
 
-                                            <div class="col-md-2">
-                                                <input
-                                                    type="text"
-                                                    class="form-control"
-                                                    name="medications[0][dose]"
-                                                    placeholder="Dose"
+                                            <div id="medication-rows">
+                                                <div
+                                                    class="clinical-repeat-row medication-row"
+                                                    data-index="0"
                                                 >
-                                            </div>
+                                                    <div class="row g-2">
+                                                        <div class="col-lg-3 col-md-6">
+                                                            <label
+                                                                class="form-label text-dark"
+                                                                for="medication-name-0"
+                                                            >
+                                                                Medication name
+                                                            </label>
 
-                                            <div class="col-md-3">
-                                                <input
-                                                    type="text"
-                                                    class="form-control"
-                                                    name="medications[0][frequency]"
-                                                    placeholder="Frequency"
-                                                >
-                                            </div>
+                                                            <input
+                                                                type="text"
+                                                                class="form-control medication-name"
+                                                                id="medication-name-0"
+                                                                name="medications[0][medication_name]"
+                                                                maxlength="255"
+                                                                placeholder="Medication name"
+                                                            >
+                                                        </div>
 
-                                            <div class="col-md-3">
-                                                <input
-                                                    type="text"
-                                                    class="form-control"
-                                                    name="medications[0][notes]"
-                                                    placeholder="Notes"
-                                                >
+                                                        <div class="col-lg-2 col-md-6">
+                                                            <label
+                                                                class="form-label text-dark"
+                                                                for="medication-dose-0"
+                                                            >
+                                                                Dose
+                                                            </label>
+
+                                                            <input
+                                                                type="text"
+                                                                class="form-control"
+                                                                id="medication-dose-0"
+                                                                name="medications[0][dose]"
+                                                                maxlength="100"
+                                                                placeholder="For example: 5 mg"
+                                                            >
+                                                        </div>
+
+                                                        <div class="col-lg-3 col-md-6">
+                                                            <label
+                                                                class="form-label text-dark"
+                                                                for="medication-frequency-0"
+                                                            >
+                                                                Frequency
+                                                            </label>
+
+                                                            <input
+                                                                type="text"
+                                                                class="form-control"
+                                                                id="medication-frequency-0"
+                                                                name="medications[0][frequency]"
+                                                                maxlength="150"
+                                                                placeholder="For example: Twice daily"
+                                                            >
+                                                        </div>
+
+                                                        <div class="col-lg-3 col-md-6">
+                                                            <label
+                                                                class="form-label text-dark"
+                                                                for="medication-notes-0"
+                                                            >
+                                                                Notes
+                                                            </label>
+
+                                                            <input
+                                                                type="text"
+                                                                class="form-control"
+                                                                id="medication-notes-0"
+                                                                name="medications[0][notes]"
+                                                                maxlength="500"
+                                                                placeholder="Optional notes"
+                                                            >
+                                                        </div>
+
+                                                        <div class="col-lg-1 col-md-12 d-flex align-items-end">
+                                                            <button
+                                                                type="button"
+                                                                class="btn btn-outline-danger remove-clinical-row"
+                                                                title="Remove medication"
+                                                                aria-label="Remove medication"
+                                                            >
+                                                                <i class="ph ph-trash" aria-hidden="true"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 
                                         <hr>
 
-                                        <h6>Allergies</h6>
+                                        {{-- Repeatable allergies --}}
+                                        <div class="clinical-history-section">
+                                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                                                <div>
+                                                    <h6 class="mb-1 text-dark">
+                                                        Allergies
+                                                    </h6>
 
-                                        <div class="row g-2">
-                                            <div class="col-md-4">
-                                                <input
-                                                    type="text"
-                                                    class="form-control"
-                                                    name="allergies[0][allergen]"
-                                                    placeholder="Allergy"
+                                                    <small class="text-dark">
+                                                        Add medication, food or environmental allergies.
+                                                    </small>
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-sm btn-outline-dark"
+                                                    id="add-allergy-row"
                                                 >
+                                                    <i class="ph ph-plus me-1" aria-hidden="true"></i>
+                                                    Add allergy
+                                                </button>
                                             </div>
 
-                                            <div class="col-md-4">
-                                                <input
-                                                    type="text"
-                                                    class="form-control"
-                                                    name="allergies[0][reaction]"
-                                                    placeholder="Reaction"
+                                            <div id="allergy-rows">
+                                                <div
+                                                    class="clinical-repeat-row allergy-row"
+                                                    data-index="0"
                                                 >
-                                            </div>
+                                                    <div class="row g-2">
+                                                        <div class="col-lg-3 col-md-6">
+                                                            <label
+                                                                class="form-label text-dark"
+                                                                for="allergen-0"
+                                                            >
+                                                                Allergy
+                                                            </label>
 
-                                            <div class="col-md-4">
-                                                <select
-                                                    class="form-select"
-                                                    name="allergies[0][severity]"
-                                                >
-                                                    <option value="unknown">Unknown severity</option>
-                                                    <option value="mild">Mild</option>
-                                                    <option value="moderate">Moderate</option>
-                                                    <option value="severe">Severe</option>
-                                                    <option value="life_threatening">
-                                                        Life threatening
-                                                    </option>
-                                                </select>
+                                                            <input
+                                                                type="text"
+                                                                class="form-control allergy-name"
+                                                                id="allergen-0"
+                                                                name="allergies[0][allergen]"
+                                                                maxlength="255"
+                                                                placeholder="For example: Penicillin"
+                                                            >
+                                                        </div>
+
+                                                        <div class="col-lg-3 col-md-6">
+                                                            <label
+                                                                class="form-label text-dark"
+                                                                for="allergy-reaction-0"
+                                                            >
+                                                                Reaction
+                                                            </label>
+
+                                                            <input
+                                                                type="text"
+                                                                class="form-control"
+                                                                id="allergy-reaction-0"
+                                                                name="allergies[0][reaction]"
+                                                                maxlength="255"
+                                                                placeholder="For example: Rash"
+                                                            >
+                                                        </div>
+
+                                                        <div class="col-lg-3 col-md-6">
+                                                            <label
+                                                                class="form-label text-dark"
+                                                                for="allergy-severity-0"
+                                                            >
+                                                                Severity
+                                                            </label>
+
+                                                            <select
+                                                                class="form-select"
+                                                                id="allergy-severity-0"
+                                                                name="allergies[0][severity]"
+                                                            >
+                                                                <option value="unknown">
+                                                                    Unknown
+                                                                </option>
+
+                                                                <option value="mild">
+                                                                    Mild
+                                                                </option>
+
+                                                                <option value="moderate">
+                                                                    Moderate
+                                                                </option>
+
+                                                                <option value="severe">
+                                                                    Severe
+                                                                </option>
+
+                                                                <option value="life_threatening">
+                                                                    Life threatening
+                                                                </option>
+                                                            </select>
+                                                        </div>
+
+                                                        <div class="col-lg-2 col-md-6">
+                                                            <label
+                                                                class="form-label text-dark"
+                                                                for="allergy-notes-0"
+                                                            >
+                                                                Notes
+                                                            </label>
+
+                                                            <input
+                                                                type="text"
+                                                                class="form-control"
+                                                                id="allergy-notes-0"
+                                                                name="allergies[0][notes]"
+                                                                maxlength="500"
+                                                                placeholder="Optional"
+                                                            >
+                                                        </div>
+
+                                                        <div class="col-lg-1 col-md-12 d-flex align-items-end">
+                                                            <button
+                                                                type="button"
+                                                                class="btn btn-outline-danger remove-clinical-row"
+                                                                title="Remove allergy"
+                                                                aria-label="Remove allergy"
+                                                            >
+                                                                <i class="ph ph-trash" aria-hidden="true"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 
@@ -694,15 +866,53 @@
                                         <h6>Observations</h6>
 
                                         <div class="row g-2">
-                                            <div class="col-md-3">
+                                        <div class="col-md-3">
+                                            <label
+                                                for="observation-height-value"
+                                                class="form-label text-dark"
+                                            >
+                                                Height
+                                            </label>
+
+                                            <div class="input-group">
                                                 <input
                                                     type="number"
-                                                    step="0.01"
                                                     class="form-control"
-                                                    name="observations[height_cm]"
-                                                    placeholder="Height cm"
+                                                    id="observation-height-value"
+                                                    min="0"
+                                                    step="0.01"
+                                                    inputmode="decimal"
+                                                    placeholder="Height"
                                                 >
+
+                                                <select
+                                                    class="form-select"
+                                                    id="observation-height-unit"
+                                                    aria-label="Height measurement unit"
+                                                    style="max-width: 105px;"
+                                                >
+                                                    <option value="cm" selected>
+                                                        cm
+                                                    </option>
+
+                                                    <option value="m">
+                                                        metres
+                                                    </option>
+                                                </select>
                                             </div>
+
+                                            {{-- Only centimetres are sent to the backend. --}}
+                                            <input
+                                                type="hidden"
+                                                id="observation-height-cm"
+                                                name="observations[height_cm]"
+                                            >
+
+                                            <small
+                                                class="form-text text-dark"
+                                                id="height-conversion-preview"
+                                            ></small>
+                                        </div>
 
                                             <div class="col-md-3">
                                                 <input
@@ -2262,6 +2472,64 @@
         0%, 100% { background-color: transparent; }
         50% { background-color: rgba(81, 207, 102, 0.2); }
     }
+
+
+            /* Repeatable clinical-history rows */
+        .clinical-history-section {
+            color: #111;
+        }
+
+        .clinical-repeat-row {
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            background-color: #fff;
+            border: 1px solid #aaa;
+            border-radius: 0.5rem;
+        }
+
+        .clinical-repeat-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .clinical-repeat-row .form-label {
+            margin-bottom: 0.35rem;
+            color: #111;
+            font-weight: 600;
+        }
+
+        .clinical-repeat-row .form-control,
+        .clinical-repeat-row .form-select {
+            color: #111;
+            background-color: #fff;
+            border-color: #777;
+        }
+
+        .clinical-repeat-row .form-control:focus,
+        .clinical-repeat-row .form-select:focus {
+            border-color: #111;
+            box-shadow: 0 0 0 0.15rem rgba(0, 0, 0, 0.15);
+        }
+
+        .remove-clinical-row {
+            width: 42px;
+            min-width: 42px;
+            height: 42px;
+            padding: 0;
+        }
+
+        #height-conversion-preview {
+            display: block;
+            min-height: 20px;
+            margin-top: 0.25rem;
+        }
+
+        @media (max-width: 767.98px) {
+            .remove-clinical-row {
+                width: auto;
+                padding-right: 1rem;
+                padding-left: 1rem;
+            }
+        }
     </style>
 
 @endpush
