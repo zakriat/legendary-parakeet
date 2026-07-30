@@ -2921,8 +2921,12 @@ async function submitForm() {
     : ''
   }
 
-  <p class="mt-3 mb-0 text-warning fw-semibold">
-    <i class="ph ph-clock me-1"></i>
+  <p class="mt-3 mb-0 fw-semibold" 
+            style="
+            color: #111;
+            background-color: #f5f5f5;
+            border: 1px solid #333;>
+    <i class="ph ph-clock me-1"> </i>
     ${paymentDetails.arrivalNote}
   </p>
 
