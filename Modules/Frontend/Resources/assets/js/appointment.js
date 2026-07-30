@@ -557,8 +557,14 @@ document.addEventListener('DOMContentLoaded', () => {
           ${mapHtml}
         </div>
 
-        <div class="alert alert-info mt-3 mb-0">
-          <i class="ph ph-clock me-1"></i>
+        <div
+            class="alert mt-3 mb-0"
+            style="
+            color: #111;
+            background-color: #f5f5f5;
+            border: 1px solid #333;">
+
+                  <i class="ph ph-clock me-1"  style="color: #111;"></i>
           <strong>Arrival reminder:</strong> ${arrivalNote}
         </div>
       </div>

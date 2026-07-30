@@ -5,6 +5,320 @@
 
 @push('after-styles')
 <style>
+
+ /*
+    |--------------------------------------------------------------------------
+    | Accessible patient referral tab
+    |--------------------------------------------------------------------------
+    */
+
+    .patient-detail-tab {
+        min-height: 46px;
+        padding: 0.7rem 1rem;
+        color: #111;
+        font-size: 1rem;
+        font-weight: 600;
+        background-color: #fff;
+        border: 1px solid transparent;
+    }
+
+    .patient-detail-tab:hover,
+    .patient-detail-tab:focus {
+        color: #111;
+        background-color: #eee;
+        border-color: #555;
+    }
+
+    .patient-detail-tab.active {
+        color: #fff !important;
+        background-color: #111 !important;
+        border-color: #111 !important;
+    }
+
+    .patient-tab-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 26px;
+        min-height: 26px;
+        padding: 0.15rem 0.45rem;
+        margin-left: 0.4rem;
+        color: #111;
+        background-color: #fff;
+        border: 1px solid currentColor;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        font-weight: 700;
+    }
+
+    .patient-referrals {
+        padding: 1.25rem 0;
+        color: #111;
+        font-size: 1rem;
+        line-height: 1.55;
+    }
+
+    .patient-referrals__header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .patient-referrals__title {
+        margin: 0 0 0.35rem;
+        color: #111;
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    .patient-referrals__description {
+        margin: 0;
+        color: #222;
+        font-size: 1rem;
+    }
+
+    .patient-referrals__count {
+        flex: 0 0 auto;
+        padding: 0.45rem 0.8rem;
+        color: #111;
+        background-color: #fff;
+        border: 2px solid #111;
+        border-radius: 999px;
+        font-weight: 700;
+    }
+
+    .patient-referrals__list {
+        display: grid;
+        gap: 1.25rem;
+    }
+
+    .patient-referral-card {
+        overflow: hidden;
+        color: #111;
+        background-color: #fff;
+        border: 2px solid #333;
+        border-radius: 0.6rem;
+    }
+
+    .patient-referral-card__header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1.1rem 1.25rem;
+        background-color: #f1f1f1;
+        border-bottom: 2px solid #333;
+    }
+
+    .patient-referral-card__reference {
+        margin: 0 0 0.25rem;
+        color: #222;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .patient-referral-card__title {
+        margin: 0;
+        color: #111;
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+
+    .patient-referral-card__speciality {
+        margin: 0.25rem 0 0;
+        color: #111;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    .patient-referral-card__status {
+        display: flex;
+        align-items: flex-end;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .referral-status,
+    .referral-type {
+        display: inline-block;
+        padding: 0.35rem 0.65rem;
+        color: #111;
+        background-color: #fff;
+        border: 2px solid #111;
+        border-radius: 0.3rem;
+        font-weight: 700;
+    }
+
+    /*
+     * Urgency uses text and borders, not colour alone.
+     */
+    .referral-status--urgent {
+        border-style: dashed;
+    }
+
+    .referral-status--emergency {
+        border-width: 3px;
+        text-transform: uppercase;
+    }
+
+    .patient-referral-card__details {
+        display: grid;
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+        gap: 0;
+        border-bottom: 1px solid #777;
+    }
+
+    .referral-detail {
+        padding: 0.9rem 1.25rem;
+        border-right: 1px solid #aaa;
+        border-bottom: 1px solid #aaa;
+    }
+
+    .referral-detail:nth-child(2n) {
+        border-right: 0;
+    }
+
+    .referral-detail__label,
+    .referral-detail__value {
+        display: block;
+    }
+
+    .referral-detail__label {
+        margin-bottom: 0.2rem;
+        color: #111;
+        font-weight: 700;
+    }
+
+    .referral-detail__value {
+        color: #111;
+        overflow-wrap: anywhere;
+    }
+
+    .referral-detail__value a {
+        color: #111;
+        font-weight: 600;
+        text-decoration: underline;
+    }
+
+    .patient-referral-card__clinical {
+        display: grid;
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+        padding: 1.25rem;
+    }
+
+    .referral-text-section {
+        padding: 1rem;
+        background-color: #fafafa;
+        border: 1px solid #777;
+        border-radius: 0.35rem;
+    }
+
+    .referral-text-section h5 {
+        margin: 0 0 0.5rem;
+        color: #111;
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    .referral-text-section p {
+        margin: 0;
+        color: #111;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    .patient-referral-card__footer {
+        display: flex;
+        justify-content: flex-end;
+        padding: 1rem 1.25rem;
+        border-top: 1px solid #777;
+    }
+
+    .patient-referral-download {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        min-height: 44px;
+        padding: 0.65rem 1rem;
+        color: #fff;
+        background-color: #111;
+        border: 2px solid #111;
+        border-radius: 0.35rem;
+        font-size: 1rem;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .patient-referral-download:hover,
+    .patient-referral-download:focus {
+        color: #111;
+        background-color: #fff;
+        outline: 2px solid #111;
+        outline-offset: 2px;
+    }
+
+    .patient-referrals__empty {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        min-height: 140px;
+        padding: 1.5rem;
+        color: #111;
+        background-color: #fff;
+        border: 2px dashed #555;
+        border-radius: 0.5rem;
+    }
+
+    .patient-referrals__empty > i {
+        font-size: 2rem;
+    }
+
+    .patient-referrals__empty h4 {
+        margin: 0 0 0.3rem;
+        color: #111;
+        font-size: 1.15rem;
+        font-weight: 700;
+    }
+
+    .patient-referrals__empty p {
+        margin: 0;
+        color: #111;
+    }
+
+    @media (max-width: 767.98px) {
+        .patient-referrals__header,
+        .patient-referral-card__header {
+            flex-direction: column;
+        }
+
+        .patient-referral-card__status {
+            align-items: flex-start;
+        }
+
+        .patient-referral-card__details,
+        .patient-referral-card__clinical {
+            grid-template-columns: 1fr;
+        }
+
+        .referral-detail {
+            border-right: 0;
+        }
+
+        .patient-referral-card__footer {
+            justify-content: stretch;
+        }
+
+        .patient-referral-download {
+            justify-content: center;
+            width: 100%;
+        }
+    }
+
 /* Enhanced Patient Detail Page Styles */
 .patient-overview-tab .nav-link {
     border-radius: 50px;
@@ -103,6 +417,37 @@
             <span>{{ __('customer.book_for_other') }}</span>
         </button>
     </li> -->
+            <li
+            class="nav-item"
+            role="presentation"
+        >
+            <button
+                class="nav-link patient-detail-tab"
+                id="patient-referrals-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#patient-referrals-panel"
+                type="button"
+                role="tab"
+                aria-controls="patient-referrals-panel"
+                aria-selected="false"
+            >
+                <i
+                    class="ph ph-share-network me-1"
+                    aria-hidden="true"
+                ></i>
+
+                Referrals
+
+                @if($patientReferrals->isNotEmpty())
+                    <span
+                        class="patient-tab-count"
+                        aria-label="{{ $patientReferrals->count() }} referrals"
+                    >
+                        {{ $patientReferrals->count() }}
+                    </span>
+                @endif
+            </button>
+        </li>
 </ul>
 
 <div class="tab-content" id="pills-tabContent">
@@ -411,6 +756,25 @@
             </div>
         </div>
     </div>
+
+     <!-- new -->
+
+     <div
+    class="tab-pane fade"
+    id="patient-referrals-panel"
+    role="tabpanel"
+    aria-labelledby="patient-referrals-tab"
+    tabindex="0"
+>
+    @include(
+        'customer::backend.customers.partials.patient_referrals',
+        [
+            'patientReferrals' =>
+                $patientReferrals,
+        ]
+    )
+</div>
+     <!-- ends -->
 
     <!-- Other Patients Tab (existing functionality) -->
     <div class="tab-pane fade" id="other-patients" role="tabpanel" aria-labelledby="other-patients-tab" tabindex="0">

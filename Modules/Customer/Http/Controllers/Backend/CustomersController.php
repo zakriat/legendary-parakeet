@@ -27,6 +27,8 @@ use Modules\Clinic\Models\Clinics;
 use Modules\Customer\Models\OtherPatient;
 use Maatwebsite\Excel\Excel as ExcelFormat;
 use Maatwebsite\Excel\Concerns\FromArray;
+
+use Modules\Appointment\Models\AppointmentReferral;
 class CustomersController extends Controller
 {
     use AppointmentTrait, LocationHelper;
@@ -616,8 +618,29 @@ class CustomersController extends Controller
         ];
 
         $otherPatients = OtherPatient::where('user_id', $id)->with('appointments')->get();
+        $patientReferrals = AppointmentReferral::query()
+            ->with([
+                'appointment',
+                'appointment.clinicservice',
+                'appointment.cliniccenter',
+                'appointment.doctor',
+                'referringDoctor',
+                'receivingDoctor',
+            ])
+            ->whereHas(
+                'appointment',
+                function ($query) use ($id) {
+                    $query->where(
+                        'user_id',
+                        $id
+                    );
+                }
+            )
+            ->latest('referred_at')
+            ->latest('id')
+            ->get();
 
-        return view('customer::backend.customers.patient_detail_enhanced', compact('data', 'patient', 'otherPatients'));
+        return view('customer::backend.customers.patient_detail_enhanced', compact('data', 'patient', 'otherPatients', 'patientReferrals'));
     }
 
     // Keep the old method for backward compatibility
