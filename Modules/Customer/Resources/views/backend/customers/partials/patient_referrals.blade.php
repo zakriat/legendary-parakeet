@@ -131,7 +131,7 @@
                         </div>
 
                         <div class="patient-referral-card__status">
-                            <span
+                            <!-- <span
                                 class="referral-status referral-status--{{ $referral->urgency }}"
                             >
                                 <span class="visually-hidden">
@@ -139,7 +139,29 @@
                                 </span>
 
                                 {{ $urgencyLabel }}
-                            </span>
+                            </span> -->
+
+                            <span
+    class="referral-status referral-status--{{ $referral->urgency }}"
+>
+    @if($referral->urgency === 'emergency')
+        <i
+            class="ph ph-warning-octagon me-1"
+            aria-hidden="true"
+        ></i>
+    @elseif($referral->urgency === 'urgent')
+        <i
+            class="ph ph-warning me-1"
+            aria-hidden="true"
+        ></i>
+    @endif
+
+    <span class="visually-hidden">
+        Urgency:
+    </span>
+
+    {{ $urgencyLabel }}
+</span>
 
                             <span class="referral-type">
                                 {{ $referral->referral_type === 'internal'
@@ -321,3 +343,34 @@
         </div>
     @endif
 </section>
+<style>
+
+    /*
+ * Routine: neutral and high contrast.
+ */
+.referral-status--routine {
+    color: #111;
+    background-color: #fff;
+    border: 2px solid #333;
+}
+
+/*
+ * Urgent: lighter red warning.
+ */
+.referral-status--urgent {
+    color: #7a1010;
+    background-color: #ffe3e3;
+    border: 2px solid #c53030;
+}
+
+/*
+ * Emergency: stronger red warning.
+ */
+.referral-status--emergency {
+    color: #fff;
+    background-color: #a40000;
+    border: 3px solid #650000;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+</style>

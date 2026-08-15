@@ -12,6 +12,8 @@ use Modules\Appointment\Models\Appointment;
 use Modules\Appointment\Models\AppointmentReferral;
 use PDF;
 
+use Modules\Appointment\Models\ReferralSpecialty;
+
 class AppointmentReferralController extends Controller
 {
     public function show(
@@ -28,8 +30,76 @@ class AppointmentReferralController extends Controller
         ]);
     }
 
+    // public function doctors(): JsonResponse
+    // {
+
+    //     $specialties = ReferralSpecialty::query()
+    //     ->where('status', true)
+    //     ->orderBy('category')
+    //     ->orderBy('sort_order')
+    //     ->orderBy('name')
+    //     ->get([
+    //         'id',
+    //         'category',
+    //         'name',
+    //     ])
+    //     ->groupBy('category')
+    //     ->map(function ($items, $category) {
+    //         return [
+    //             'category' => $category,
+    //             'items' => $items->map(
+    //                 function ($specialty) {
+    //                     return [
+    //                         'id' => $specialty->id,
+    //                         'name' => $specialty->name,
+    //                     ];
+    //                 }
+    //             )->values(),
+    //         ];
+    //     })
+    //     ->values();
+
+    //     $doctors = User::query()
+    //         ->where('user_type', 'doctor')
+    //         ->where('status', 1)
+    //         ->orderBy('first_name')
+    //         ->orderBy('last_name')
+    //         ->get([
+    //             'id',
+    //             'first_name',
+    //             'last_name',
+    //             'email',
+    //             'mobile',
+    //             'gmc_number',
+    //         ])
+    //         ->map(function (User $doctor) {
+    //             return [
+    //                 'id' => $doctor->id,
+    //                 'name' => trim(
+    //                     $doctor->first_name . ' ' .
+    //                     $doctor->last_name
+    //                 ),
+    //                 'email' => $doctor->email,
+    //                 'phone' => $doctor->mobile,
+    //                 'gmc_number' => $doctor->gmc_number,
+    //             ];
+    //         });
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'doctors' => $doctors,
+    //         'specialties' => $specialties,
+
+    //     ]);
+    // }
     public function doctors(): JsonResponse
     {
+        /*
+        |--------------------------------------------------------------------------
+        | Internal CRM doctors
+        |--------------------------------------------------------------------------
+        */
+
         $doctors = User::query()
             ->where('user_type', 'doctor')
             ->where('status', 1)
@@ -44,21 +114,85 @@ class AppointmentReferralController extends Controller
                 'gmc_number',
             ])
             ->map(function (User $doctor) {
+                $name = trim(
+                    ($doctor->first_name ?? '') .
+                    ' ' .
+                    ($doctor->last_name ?? '')
+                );
+
                 return [
                     'id' => $doctor->id,
-                    'name' => trim(
-                        $doctor->first_name . ' ' .
-                        $doctor->last_name
-                    ),
-                    'email' => $doctor->email,
-                    'phone' => $doctor->mobile,
-                    'gmc_number' => $doctor->gmc_number,
+                    'name' => $name !== ''
+                        ? $name
+                        : $doctor->email,
+
+                    'email' =>
+                        $doctor->email,
+
+                    'phone' =>
+                        $doctor->mobile,
+
+                    'gmc_number' =>
+                        $doctor->gmc_number,
                 ];
-            });
+            })
+            ->values();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Referral specialties
+        |--------------------------------------------------------------------------
+        */
+
+        $specialtyRecords =
+            ReferralSpecialty::query()
+                ->where('status', 1)
+                ->orderBy('category')
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get([
+                    'id',
+                    'category',
+                    'name',
+                ]);
+
+        $specialties = $specialtyRecords
+            ->groupBy('category')
+            ->map(
+                function (
+                    $items,
+                    $category
+                ) {
+                    return [
+                        'category' => $category,
+
+                        'items' => $items
+                            ->map(
+                                function (
+                                    ReferralSpecialty
+                                    $specialty
+                                ) {
+                                    return [
+                                        'id' =>
+                                            $specialty->id,
+
+                                        'name' =>
+                                            $specialty->name,
+                                    ];
+                                }
+                            )
+                            ->values()
+                            ->all(),
+                    ];
+                }
+            )
+            ->values()
+            ->all();
 
         return response()->json([
             'success' => true,
             'doctors' => $doctors,
+            'specialties' => $specialties,
         ]);
     }
 
@@ -85,6 +219,20 @@ class AppointmentReferralController extends Controller
                     }),
             ],
 
+                'referral_specialty_id' => [
+                    'required',
+                    'integer',
+                    Rule::exists(
+                        'referral_specialties',
+                        'id'
+                    )->where(function ($query) {
+                        $query->where(
+                            'status',
+                            true
+                        );
+                    }),
+                ],
+
             'receiving_doctor_name' => [
                 'nullable',
                 'required_if:referral_type,external',
@@ -92,11 +240,11 @@ class AppointmentReferralController extends Controller
                 'max:255',
             ],
 
-            'receiving_doctor_speciality' => [
-                'required',
-                'string',
-                'max:255',
-            ],
+            // 'receiving_doctor_speciality' => [
+            //     'required',
+            //     'string',
+            //     'max:255',
+            // ],
 
             'receiving_organisation_name' => [
                 'nullable',
@@ -219,6 +367,23 @@ class AppointmentReferralController extends Controller
              */
             $validated['receiving_doctor_id'] = null;
         }
+
+        $specialty = ReferralSpecialty::query()
+            ->whereKey(
+                $validated[
+                    'referral_specialty_id'
+                ]
+            )
+            ->where('status', true)
+            ->firstOrFail();
+
+        /*
+        * Store a permanent text snapshot for PDFs
+        * and historical referral records.
+        */
+        $validated[
+            'receiving_doctor_speciality'
+        ] = $specialty->name;
 
         $referral = DB::transaction(
             function () use (

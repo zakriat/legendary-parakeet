@@ -337,6 +337,7 @@
             let referralStatusSelect = null
             let referralPreviousStatus = null
             let referralDoctorsLoaded = false
+            let referralSpecialtiesLoaded = false
             let referralWasSaved = false
             let referralModalIsOpening = false
 
@@ -522,84 +523,532 @@
                 errorBox.classList.add('d-none')
             }
 
-            async function loadReferralDoctors() {
-                if (referralDoctorsLoaded) {
-                    return
-                }
+            // async function loadReferralDoctors() {
+            //     if (referralDoctorsLoaded) {
+            //         return
+            //     }
 
-                const response = await fetch(
-                    referralRoutes.doctors,
-                    {
-                        method: 'GET',
-                        headers: {
-                            Accept: 'application/json',
-                            'X-Requested-With':
-                                'XMLHttpRequest',
-                        },
-                    }
+            //     const response = await fetch(
+            //         referralRoutes.doctors,
+            //         {
+            //             method: 'GET',
+            //             headers: {
+            //                 Accept: 'application/json',
+            //                 'X-Requested-With':
+            //                     'XMLHttpRequest',
+            //             },
+            //         }
+            //     )
+
+            //     if (!response.ok) {
+            //         throw new Error(
+            //             'CRM doctors could not be loaded.'
+            //         )
+            //     }
+
+            //     const result = await response.json()
+
+            //     const select =
+            //         document.getElementById(
+            //             'receiving_doctor_id'
+            //         )
+
+            //     if (!select) {
+            //         throw new Error(
+            //             'Receiving-doctor field was not found.'
+            //         )
+            //     }
+
+            //     /*
+            //     * Retain only the placeholder before
+            //     * inserting the doctors.
+            //     */
+            //     select
+            //         .querySelectorAll(
+            //             'option:not(:first-child)'
+            //         )
+            //         .forEach(option => option.remove())
+
+            //     ;(result.doctors || [])
+            //         .forEach(doctor => {
+            //             const option =
+            //                 document.createElement(
+            //                     'option'
+            //                 )
+
+            //             option.value = doctor.id
+
+            //             option.textContent =
+            //                 doctor.name +
+            //                 (
+            //                     doctor.email
+            //                         ? ` - ${doctor.email}`
+            //                         : ''
+            //                 )
+
+            //             option.dataset.name =
+            //                 doctor.name || ''
+
+            //             option.dataset.email =
+            //                 doctor.email || ''
+
+            //             option.dataset.phone =
+            //                 doctor.phone || ''
+
+            //             select.appendChild(option)
+            //         })
+
+            //     referralDoctorsLoaded = true
+            // }
+
+            function destroyReferralSelect2(
+    selectElement
+) {
+    if (
+        !window.jQuery ||
+        !$.fn.select2 ||
+        !selectElement
+    ) {
+        return
+    }
+
+    const select =
+        $(selectElement)
+
+    if (
+        select.hasClass(
+            'select2-hidden-accessible'
+        )
+    ) {
+        select.select2('destroy')
+    }
+}
+
+function resetReferralSelect(
+    selectElement,
+    placeholder
+) {
+    if (!selectElement) {
+        return
+    }
+
+    destroyReferralSelect2(
+        selectElement
+    )
+
+    selectElement.innerHTML = ''
+
+    const placeholderOption =
+        document.createElement('option')
+
+    placeholderOption.value = ''
+    placeholderOption.textContent =
+        placeholder
+
+    selectElement.appendChild(
+        placeholderOption
+    )
+}
+
+function initializeReceivingDoctorSearch() {
+    const element =
+        document.getElementById(
+            'receiving_doctor_id'
+        )
+
+    if (!element) {
+        return
+    }
+
+    if (
+        !window.jQuery ||
+        !$.fn.select2
+    ) {
+        console.warn(
+            'Select2 is not available for the doctor dropdown.'
+        )
+
+        return
+    }
+
+    destroyReferralSelect2(element)
+
+    $(element).select2({
+        width: '100%',
+        placeholder:
+            'Search or select a doctor',
+        allowClear: true,
+
+        /*
+         * Always show the search input.
+         */
+        minimumResultsForSearch: 0,
+
+        /*
+         * Prevent the dropdown appearing behind
+         * the Bootstrap modal.
+         */
+        dropdownParent:
+            $('#appointment-referral-modal'),
+    })
+}
+
+function initializeReferralSpecialtySearch() {
+    const element =
+        document.getElementById(
+            'referral_specialty_id'
+        )
+
+    if (!element) {
+        return
+    }
+
+    if (
+        !window.jQuery ||
+        !$.fn.select2
+    ) {
+        console.warn(
+            'Select2 is not available for the specialty dropdown.'
+        )
+
+        return
+    }
+
+    destroyReferralSelect2(element)
+
+    $(element).select2({
+        width: '100%',
+        placeholder:
+            'Search or select a speciality',
+        allowClear: true,
+
+        /*
+         * Force Select2 to show its search field.
+         */
+        minimumResultsForSearch: 0,
+
+        dropdownParent:
+            $('#appointment-referral-modal'),
+
+        /*
+         * Search specialties inside their category
+         * optgroups.
+         */
+        matcher: function (
+            parameters,
+            data
+        ) {
+            const searchTerm =
+                String(
+                    parameters.term || ''
                 )
+                    .trim()
+                    .toLowerCase()
 
-                if (!response.ok) {
-                    throw new Error(
-                        'CRM doctors could not be loaded.'
-                    )
-                }
-
-                const result = await response.json()
-
-                const select =
-                    document.getElementById(
-                        'receiving_doctor_id'
-                    )
-
-                if (!select) {
-                    throw new Error(
-                        'Receiving-doctor field was not found.'
-                    )
-                }
-
-                /*
-                * Retain only the placeholder before
-                * inserting the doctors.
-                */
-                select
-                    .querySelectorAll(
-                        'option:not(:first-child)'
-                    )
-                    .forEach(option => option.remove())
-
-                ;(result.doctors || [])
-                    .forEach(doctor => {
-                        const option =
-                            document.createElement(
-                                'option'
-                            )
-
-                        option.value = doctor.id
-
-                        option.textContent =
-                            doctor.name +
-                            (
-                                doctor.email
-                                    ? ` - ${doctor.email}`
-                                    : ''
-                            )
-
-                        option.dataset.name =
-                            doctor.name || ''
-
-                        option.dataset.email =
-                            doctor.email || ''
-
-                        option.dataset.phone =
-                            doctor.phone || ''
-
-                        select.appendChild(option)
-                    })
-
-                referralDoctorsLoaded = true
+            if (!searchTerm) {
+                return data
             }
 
+            /*
+             * Optgroup records contain children.
+             */
+            if (
+                Array.isArray(
+                    data.children
+                )
+            ) {
+                const matchingChildren =
+                    data.children.filter(
+                        child => {
+                            return String(
+                                child.text || ''
+                            )
+                                .toLowerCase()
+                                .includes(
+                                    searchTerm
+                                )
+                        }
+                    )
+
+                if (
+                    matchingChildren.length ===
+                    0
+                ) {
+                    return null
+                }
+
+                return {
+                    ...data,
+                    children:
+                        matchingChildren,
+                }
+            }
+
+            const optionText =
+                String(data.text || '')
+                    .toLowerCase()
+
+            return optionText.includes(
+                searchTerm
+            )
+                ? data
+                : null
+        },
+    })
+}
+
+function populateReferralDoctors(
+    doctors
+) {
+    const select =
+        document.getElementById(
+            'receiving_doctor_id'
+        )
+
+    if (!select) {
+        throw new Error(
+            'Receiving CRM doctor field was not found.'
+        )
+    }
+
+    resetReferralSelect(
+        select,
+        'Search or select a doctor'
+    )
+
+    doctors.forEach(doctor => {
+        const option =
+            document.createElement(
+                'option'
+            )
+
+        option.value =
+            String(doctor.id)
+
+        option.textContent =
+            doctor.name +
+            (
+                doctor.email
+                    ? ` - ${doctor.email}`
+                    : ''
+            )
+
+        option.dataset.name =
+            doctor.name || ''
+
+        option.dataset.email =
+            doctor.email || ''
+
+        option.dataset.phone =
+            doctor.phone || ''
+
+        option.dataset.gmcNumber =
+            doctor.gmc_number || ''
+
+        select.appendChild(option)
+    })
+
+    referralDoctorsLoaded = true
+
+    initializeReceivingDoctorSearch()
+
+    console.log(
+        'CRM doctors loaded:',
+        doctors.length
+    )
+}
+
+function populateReferralSpecialties(
+    specialtyGroups
+) {
+    const select =
+        document.getElementById(
+            'referral_specialty_id'
+        )
+
+    if (!select) {
+        throw new Error(
+            'Referral specialty field was not found.'
+        )
+    }
+
+    resetReferralSelect(
+        select,
+        'Search or select a speciality'
+    )
+
+    specialtyGroups.forEach(group => {
+        const optionGroup =
+            document.createElement(
+                'optgroup'
+            )
+
+        optionGroup.label =
+            group.category ||
+            'Other specialties'
+
+        const specialties =
+            Array.isArray(group.items)
+                ? group.items
+                : []
+
+        specialties.forEach(
+            specialty => {
+                const option =
+                    document.createElement(
+                        'option'
+                    )
+
+                option.value =
+                    String(specialty.id)
+
+                option.textContent =
+                    specialty.name
+
+                option.dataset
+                    .specialtyName =
+                    specialty.name
+
+                optionGroup.appendChild(
+                    option
+                )
+            }
+        )
+
+        if (
+            optionGroup.children.length >
+            0
+        ) {
+            select.appendChild(
+                optionGroup
+            )
+        }
+    })
+
+    referralSpecialtiesLoaded = true
+
+    initializeReferralSpecialtySearch()
+
+    console.log(
+        'Referral specialties loaded:',
+        select.querySelectorAll(
+            'option:not([value=""])'
+        ).length
+    )
+}
+
+async function loadReferralDoctors() {
+    /*
+     * Do not return until both collections
+     * have been loaded.
+     */
+    if (
+        referralDoctorsLoaded &&
+        referralSpecialtiesLoaded
+    ) {
+        return
+    }
+
+    const response = await fetch(
+        referralRoutes.doctors,
+        {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                Accept:
+                    'application/json',
+
+                'X-Requested-With':
+                    'XMLHttpRequest',
+            },
+        }
+    )
+
+    const responseText =
+        await response.text()
+
+    let result
+
+    try {
+        result = JSON.parse(
+            responseText
+        )
+    } catch (error) {
+        console.error(
+            'Invalid referral-options response:',
+            responseText
+        )
+
+        throw new Error(
+            `Referral options returned invalid JSON (${response.status}).`
+        )
+    }
+
+    if (!response.ok) {
+        console.error(
+            'Referral-options error:',
+            result
+        )
+
+        throw new Error(
+            result.message ||
+            `Referral options could not be loaded (${response.status}).`
+        )
+    }
+
+    const doctors =
+        Array.isArray(
+            result.doctors
+        )
+            ? result.doctors
+            : []
+
+    const specialties =
+        Array.isArray(
+            result.specialties
+        )
+            ? result.specialties
+            : []
+
+    console.log(
+        'Referral options received:',
+        {
+            doctors:
+                doctors.length,
+
+            specialtyGroups:
+                specialties.length,
+
+            specialties:
+                specialties.reduce(
+                    (
+                        total,
+                        group
+                    ) => {
+                        return total +
+                            (
+                                Array.isArray(
+                                    group.items
+                                )
+                                    ? group
+                                        .items
+                                        .length
+                                    : 0
+                            )
+                    },
+                    0
+                ),
+        }
+    )
+
+    populateReferralDoctors(
+        doctors
+    )
+
+    populateReferralSpecialties(
+        specialties
+    )
+}
             function clearReferralForm() {
                 const form =
                     document.getElementById(
@@ -609,9 +1058,47 @@
                 if (!form) {
                     return
                 }
+form.reset()
+clearReferralErrors()
 
-                form.reset()
-                clearReferralErrors()
+/*
+ * Clear Select2 selections while retaining
+ * the loaded doctor and specialty options.
+ */
+const doctorSelect =
+    $('#receiving_doctor_id')
+
+if (
+    doctorSelect.hasClass(
+        'select2-hidden-accessible'
+    )
+) {
+    doctorSelect
+        .val(null)
+        .trigger('change.select2')
+}
+
+const specialtySelect =
+    $('#referral_specialty_id')
+
+if (
+    specialtySelect.hasClass(
+        'select2-hidden-accessible'
+    )
+) {
+    specialtySelect
+        .val(null)
+        .trigger('change')
+}
+
+const specialtySnapshot =
+    document.getElementById(
+        'receiving_doctor_speciality'
+    )
+
+if (specialtySnapshot) {
+    specialtySnapshot.value = ''
+}
 
                 const externalRadio =
                     form.querySelector(
@@ -657,8 +1144,10 @@
 
                 const fields = [
                     'receiving_doctor_id',
+                    'referral_specialty_id',
                     'receiving_doctor_name',
                     'receiving_doctor_speciality',
+
                     'receiving_organisation_name',
                     'receiving_doctor_email',
                     'receiving_doctor_phone',
@@ -679,6 +1168,36 @@
                             referral[field] ?? ''
                     }
                 })
+
+                /*
+ * Select2 needs an explicit change event to
+ * display loaded saved values.
+ */
+if (
+    referral.receiving_doctor_id
+) {
+    $('#receiving_doctor_id')
+        .val(
+            String(
+                referral
+                    .receiving_doctor_id
+            )
+        )
+        .trigger('change')
+}
+
+if (
+    referral.referral_specialty_id
+) {
+    $('#referral_specialty_id')
+        .val(
+            String(
+                referral
+                    .referral_specialty_id
+            )
+        )
+        .trigger('change')
+}
 
                 updateReferralTypeInterface()
             }

@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\BaseModel;
+// use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AppointmentReferral extends BaseModel
 {
@@ -17,6 +18,7 @@ class AppointmentReferral extends BaseModel
         'appointment_id',
         'referring_doctor_id',
         'receiving_doctor_id',
+        'referral_specialty_id',
         'referral_type',
         'receiving_doctor_name',
         'receiving_doctor_speciality',
@@ -75,6 +77,14 @@ class AppointmentReferral extends BaseModel
         return $this->belongsTo(
             User::class,
             'updated_by'
+        );
+    }
+
+    public function specialty(): BelongsTo
+    {
+        return $this->belongsTo(
+            ReferralSpecialty::class,
+            'referral_specialty_id'
         );
     }
 }
