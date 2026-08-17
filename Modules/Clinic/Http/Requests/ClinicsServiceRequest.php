@@ -72,15 +72,25 @@ class ClinicsServiceRequest extends FormRequest
                         'max:999999.99',
                     ],
 
-                    'tariffs.*.starts_at' => [
-                        'nullable',
-                        'date_format:H:i',
-                    ],
+                    // 'tariffs.*.starts_at' => [
+                    //     'nullable',
+                    //     'date_format:H:i',
+                    // ],
 
-                    'tariffs.*.ends_at' => [
-                        'nullable',
-                        'date_format:H:i',
-                    ],
+                    // 'tariffs.*.ends_at' => [
+                    //     'nullable',
+                    //     'date_format:H:i',
+                    // ],
+
+                    'tariffs.*.starts_at' => [
+                            'nullable',
+                            'date_format:H:i:s',
+                        ],
+
+                        'tariffs.*.ends_at' => [
+                            'nullable',
+                            'date_format:H:i:s',
+                        ],
 
                     'tariffs.*.status' => [
                         'nullable',
