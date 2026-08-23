@@ -23,7 +23,7 @@ class GenerateMenus
                     'order' => 0
                 ]);
                 $this->mainRoute($menu, [
-                    'icon' => 'ph ph-squares-four',
+                    'icon' => 'crm-icon crm-dashboard',
                     'title' => __('sidebar.dashboard'),
                     'route' => 'backend.home',
                     'active' => ['app', 'app/dashboard'],
@@ -33,7 +33,7 @@ class GenerateMenus
                 $this->staticMenu($menu, ['title' => __('menu.main'), 'order' => 0]);
 
                 $this->mainRoute($menu, [
-                    'icon' => 'ph ph-squares-four',
+                    'icon' => 'crm-icon crm-dashboard',
                     'title' => __('sidebar.dashboard'),
                     'route' => 'backend.doctor-dashboard',
                     'active' => ['app', 'app/doctor-dashboard'],
@@ -44,7 +44,7 @@ class GenerateMenus
 
                 // main
                 $this->mainRoute($menu, [
-                    'icon' => 'ph ph-squares-four',
+                    'icon' => 'crm-icon crm-dashboard',
                     'title' => __('sidebar.dashboard'),
                     'route' => 'backend.receptionist-dashboard',
                     'active' => ['app', 'app/receptionist-dashboard'],
@@ -55,7 +55,7 @@ class GenerateMenus
 
                 // main
                 $this->mainRoute($menu, [
-                    'icon' => 'ph ph-squares-four',
+                    'icon' => 'crm-icon crm-dashboard',
                     'title' => __('sidebar.dashboard'),
                     'route' => 'backend.nurse-dashboard',
                     'active' => ['app', 'app/nurse-dashboard'],
@@ -64,7 +64,7 @@ class GenerateMenus
             } else if (auth()->user()->hasRole('vendor')) {
 
                 $this->mainRoute($menu, [
-                    'icon' => 'ph ph-squares-four',
+                    'icon' => 'crm-icon crm-dashboard',
                     'title' => __('sidebar.dashboard'),
                     'route' => 'backend.vendor-dashboard',
                     'active' => ['app', 'app/receptionist-dashboard'],
@@ -88,7 +88,7 @@ class GenerateMenus
             // ── Triage: nurse/doctor sees flat link, admin sees parent menu ──────────
             if (auth()->user()->hasRole('nurse') || auth()->user()->hasRole('doctor')) {
                 $this->mainRoute($menu, [
-                    'icon'       => 'ph ph-clipboard-text',
+                    'icon'       => 'crm-icon crm-triage',
                     'title'      => __('triage.menu_title'),
                     'route'      => 'backend.triage.index',
                     'active'     => 'app/triage',
@@ -100,14 +100,14 @@ class GenerateMenus
 
             if (auth()->user()->hasRole(['admin', 'demo_admin'])) {
                 $triageMenu = $this->parentMenu($menu, [
-                    'icon'       => 'ph ph-clipboard-text',
+                    'icon'       => 'crm-icon crm-triage',
                     'title'      => __('triage.menu_title'),
                     'nickname'   => 'triage',
                     'permission' => ['view_triage_queue'],
                     'order'      => 0,
                 ]);
                 $this->childMain($triageMenu, [
-                    'icon'       => 'ph ph-list-bullets',
+                    'icon'       => 'crm-icon crm-triage',
                     'title'      => __('triage.queue'),
                     'route'      => 'backend.triage.index',
                     'active'     => 'app/triage',
@@ -115,7 +115,7 @@ class GenerateMenus
                     'order'      => 0,
                 ]);
                 $this->childMain($triageMenu, [
-                    'icon'       => 'ph ph-tag',
+                    'icon'       => 'crm-icon crm-categories',
                     'title'      => __('triage.categories'),
                     'route'      => 'backend.triage-category.index',
                     'active'     => 'app/triage-category',
@@ -126,7 +126,7 @@ class GenerateMenus
             // ─────────────────────────────────────────────────────────────────
 
             $this->mainRoute($menu, [
-                'icon' => 'ph ph-sliders-horizontal',
+                'icon' => 'crm-icon crm-appointments',
                 'title' => __('sidebar.appointment'),
                 'route' => 'backend.appointments.index',
                 'permission' => ['view_clinic_appointment_list'],
@@ -136,8 +136,8 @@ class GenerateMenus
             
             // Blood Tests Menu Item
             $this->mainRoute($menu, [
-                'icon' => 'ph ph-test-tube',
-                'title' => '🩸 Blood Tests',
+                'icon' => 'crm-icon crm-blood-tests',
+                'title' => 'Blood Tests',
                 'route' => 'backend.blood-tests.index',
                 'permission' => ['view_clinic_appointment_list'],
                 'active' => ['app/blood-tests'],
@@ -146,7 +146,7 @@ class GenerateMenus
             
             if (auth()->user()->hasRole('receptionist') || auth()->user()->hasRole('nurse')) {
                 $this->mainRoute($menu, [
-                    'icon' => 'ph ph-list-bullets',
+                    'icon' => 'crm-icon crm-medical-encounter',
                     'title' => __('sidebar.encounter'),
                     'route' => 'backend.encounter.index',
                     'active' => 'app/encounter',
@@ -157,7 +157,7 @@ class GenerateMenus
 
             if (auth()->user()->hasRole(['admin', 'demo_admin',])) {
                 $encounter = $this->parentMenu($menu, [
-                    'icon' => 'ph ph-clock-counter-clockwise',
+                    'icon' => 'crm-icon crm-medical-encounter',
                     'title' =>  __('sidebar.encounter'),
                     'route' => 'backend.encounter.index',
                     'permission' => ['view_encounter'],
@@ -165,7 +165,7 @@ class GenerateMenus
                     'order' => 0,
                 ]);
                 $this->childMain($encounter, [
-                    'icon' => 'ph ph-list-bullets',
+                    'icon' => 'crm-icon crm-medical-encounter',
                     'title' => __('sidebar.encounter'),
                     'route' => 'backend.encounter.index',
                     'active' => 'app/encounter',
@@ -174,7 +174,7 @@ class GenerateMenus
                 ]);
 
                 $this->childMain($encounter, [
-                    'icon' => 'ph ph-layout',
+                    'icon' => 'crm-icon crm-custom-forms',
                     'title' => __('sidebar.encounter_template'),
                     'route' => 'backend.encounter-template.index',
                     'active' => 'app/encounter-template',
@@ -202,7 +202,7 @@ class GenerateMenus
 
             if (!auth()->user()->hasRole(['doctor'])) {
                 $doctor = $this->parentMenu($menu, [
-                    'icon' => 'ph ph-stethoscope',
+                    'icon' => 'crm-icon crm-doctors',
                     'title' => __('sidebar.doctor'),
                     'route' => 'backend.doctor.index',
                     'permission' => ['view_doctors_session'],
@@ -210,7 +210,7 @@ class GenerateMenus
                     'order' => 0,
                 ]);
                 $this->childMain($doctor, [
-                    'icon' => 'ph ph-stethoscope',
+                    'icon' => 'crm-icon crm-doctors',
                     'title' => __('sidebar.doctor'),
                     'route' => 'backend.doctor.index',
                     'active' => 'app/doctor',
@@ -228,7 +228,7 @@ class GenerateMenus
             }
 
             $this->mainRoute($menu, [
-                'icon' => 'ph ph-calendar-heart',
+                'icon' => 'crm-icon crm-specializations',
                 'title' => __('clinic.specialization'),
                 'route' => 'backend.specializations.index',
                 'active' => ['app/specializations'],
@@ -248,7 +248,7 @@ class GenerateMenus
             }
             if (!auth()->user()->hasRole('receptionist')) {
                 $this->mainRoute($menu, [
-                    'icon' => 'ph ph-hospital',
+                    'icon' => 'crm-icon crm-clinics',
                     'title' => __('sidebar.clinic'),
                     'route' => 'backend.clinics.index',
                     'permission' => ['view_clinics_center'],
@@ -257,7 +257,7 @@ class GenerateMenus
                 ]);
             }
             $this->mainRoute($menu, [
-                'icon' => 'ph ph-list-bullets',
+                'icon' => 'crm-icon crm-categories',
                 'title' => __('sidebar.categories'),
                 'route' => 'backend.category.index',
                 'permission' => ['view_clinics_category'],
@@ -268,7 +268,7 @@ class GenerateMenus
 
 
             $this->mainRoute($menu, [
-                'icon' => 'ph ph-first-aid-kit',
+                'icon' => 'crm-icon crm-services',
                 'title' => __('sidebar.services'),
                 'route' => 'backend.services.index',
                 'active' => ['app/services'],
@@ -292,7 +292,7 @@ class GenerateMenus
 
             if (auth()->user()->hasRole(['doctor'])) {
                 $this->mainRoute($menu, [
-                    'icon' => 'ph ph-list-bullets',
+                    'icon' => 'crm-icon crm-medical-encounter',
                     'title' => __('sidebar.encounter'),
                     'route' => 'backend.encounter.index',
                     'active' => 'app/encounter',
@@ -301,7 +301,7 @@ class GenerateMenus
                 ]);
             }
             $this->mainRoute($menu, [
-                'icon' => ' ph ph-star',
+                'icon' => 'crm-icon crm-reviews',
                 'title' => __('sidebar.reviews'),
                 'route' => ['backend.doctors.review'],
                 'active' => ['app/doctors-review'],
@@ -433,7 +433,7 @@ class GenerateMenus
 
 
             $this->mainRoute($menu, [
-                'icon' => 'ph ph-users',
+                'icon' => 'crm-icon crm-patients',
                 'title' =>  __('sidebar.patient'),
                 'route' => 'backend.customers.index',
                 'active' => ['app/customers'],
@@ -442,7 +442,7 @@ class GenerateMenus
             ]);
 
             $this->mainRoute($menu, [
-                'icon' => 'ph ph-user-circle-gear',
+                'icon' => 'crm-icon crm-receptionists',
                 'title' => __('sidebar.receptionist'),
                 'route' => 'backend.receptionist.index',
                 'active' => ['app/receptionist'],
@@ -451,7 +451,7 @@ class GenerateMenus
             ]);
 
             $this->mainRoute($menu, [
-                'icon' => 'ph ph-user-nurse',
+                'icon' => 'crm-icon crm-nurses',
                 'title' => __('sidebar.nurse'),
                 'route' => 'backend.nurse.index',
                 'active' => ['app/nurse'],
@@ -460,7 +460,7 @@ class GenerateMenus
             ]);
             if (multiVendor() == "1" && auth()->user()->hasRole(['admin', 'demo_admin'])) {
                 $this->mainRoute($menu, [
-                    'icon' => 'ph ph-user-square',
+                    'icon' => 'crm-icon crm-clinic-admin',
                     'title' => __('sidebar.vendors'),
                     'route' => 'backend.multivendors.index',
                     'active' => ['app/multivendors'],
@@ -476,7 +476,7 @@ class GenerateMenus
 
 
             $this->mainRoute($menu, [
-                'icon' => 'ph ph-percent',
+                'icon' => 'crm-icon crm-tax',
                 'title' => __('sidebar.tax'),
                 'route' => 'backend.tax.index',
                 'active' => ['app/tax'],
@@ -484,7 +484,7 @@ class GenerateMenus
                 'order' => 0,
             ]);
             $this->mainRoute($menu, [
-                'icon' => 'ph ph-invoice',
+                'icon' => 'crm-icon crm-billing-records',
                 'title' => __('sidebar.billing_record'),
                 'route' => 'backend.billing-record.index',
                 'active' => ['app/billing-record'],
@@ -492,7 +492,7 @@ class GenerateMenus
                 'order' => 0,
             ]);
             $this->mainRoute($menu, [
-                'icon' => 'ph ph-currency-dollar',
+                'icon' => 'crm-icon crm-doctor-earnings',
                 'title' => __('sidebar.doctor_earning'),
                 'route' => 'backend.earnings.index',
                 'active' => ['app/earnings'],
@@ -501,7 +501,7 @@ class GenerateMenus
             ]);
             if (multiVendor() == "1" && auth()->user()->hasRole(['admin', 'demo_admin'])) {
                 $this->mainRoute($menu, [
-                    'icon' => 'ph ph-user-circle-check',
+                    'icon' => 'crm-icon crm-clinic-admin-earnings',
                     'title' => __('sidebar.vendor_earning'),
                     'route' => 'backend.vendor-earnings.index',
                     'active' => ['app/vendor-earnings'],
@@ -525,7 +525,7 @@ class GenerateMenus
             if (auth()->user()->hasRole('vendor')) {
 
                 $this->mainRoute($menu, [
-                    'icon' => 'ph ph-percent',
+                    'icon' => 'crm-icon crm-clinic-admin-earnings',
                     'title' =>  __('appointment.revenue_breakdown'),
                     'route' => 'backend.reports.commission-revenue',
                     'active' => ['app/commission-revenue'],
@@ -537,14 +537,14 @@ class GenerateMenus
             if (auth()->user()->hasRole('vendor') || auth()->user()->hasRole('demo_admin') ||  auth()->user()->hasRole('admin')) {
 
                 $this->mainRoute($menu, [
-                    'icon' => 'ph ph-file-magnifying-glass',
+                    'icon' => 'crm-icon crm-appointment-overview',
                     'title' =>  __('dashboard.lbl_title_appointment_overview'),
                     'route' => 'backend.reports.appointment-overview',
                     'active' => ['app/appointment-overview'],
                     'order' => 0,
                 ]);
                 $this->mainRoute($menu, [
-                    'icon' => 'ph ph-map-pin-plus',
+                    'icon' => 'crm-icon crm-clinic-overview',
                     'title' =>  __('sidebar.clinic_overview'),
                     'route' => 'backend.reports.clinic-overview',
                     'active' => ['app/clinic-overview'],
@@ -555,7 +555,7 @@ class GenerateMenus
 
             if (multiVendor() == "1") {
                 $this->mainRoute($menu, [
-                    'icon' => 'ph ph-share',
+                    'icon' => 'crm-icon crm-request-service',
                     'title' =>  __('sidebar.request_service'),
                     'route' => 'backend.requestservices.index',
                     'active' => ['app/requestservices'],
@@ -566,7 +566,7 @@ class GenerateMenus
 
 
             $this->mainRoute($menu, [
-                'icon' => 'ph ph-currency-dollar',
+                'icon' => 'crm-icon crm-doctor-payout',
                 'title' => __('sidebar.doctor_payout'),
                 'route' => 'backend.reports.doctor-payout-report',
                 'active' => ['app/doctor-payout-report'],
@@ -575,7 +575,7 @@ class GenerateMenus
             ]);
             if (multiVendor() == "1" && auth()->user()->hasRole(['admin', 'demo_admin'])) {
                 $this->mainRoute($menu, [
-                    'icon' => 'ph ph-currency-dollar-simple',
+                    'icon' => 'crm-icon crm-clinic-admin-payout',
                     'title' => __('sidebar.vendor_payout'),
                     'route' => 'backend.reports.vendor-payout-report',
                     'active' => ['app/vendor-payout-report'],
@@ -615,7 +615,7 @@ class GenerateMenus
             }
             if (multiVendor() == "1" && auth()->user()->hasRole(['admin', 'demo_admin'])) {
                 $this->mainRoute($menu, [
-                    'icon' => 'ph ph-airplay',
+                    'icon' => 'crm-icon crm-system-services',
                     'title' => __('sidebar.system_service'),
                     'route' => 'backend.system-service.index',
                     'active' => ['app/system-service'],
@@ -626,7 +626,7 @@ class GenerateMenus
 
             // --- INCIDENCE REPORT ---
             $this->mainRoute($menu, [
-                'icon' => 'ph ph-map-pin-plus',
+                'icon' => 'crm-icon crm-incidence-report',
                 'title' => __('messages.incidence'),
                 'route' => 'backend.incidence.index',
                 'active' => 'app/incidence',
@@ -636,7 +636,7 @@ class GenerateMenus
 
             // --- BLOG ---
             $this->mainRoute($menu, [
-                'icon' => 'ph ph-pencil-simple',
+                'icon' => 'crm-icon crm-blog',
                 'title' => __('sidebar.blog'),
                 'route' => 'backend.blog.index',
                 'active' => ['app/blog'],
@@ -644,7 +644,7 @@ class GenerateMenus
             ]);
 
             $location = $this->parentMenu($menu, [
-                'icon' => 'ph ph-map-pin-line',
+                'icon' => 'crm-icon crm-locations',
                 'title' => __('sidebar.location'),
                 'nickname' => 'location',
                 'permission' => ['view_location'],
@@ -680,7 +680,7 @@ class GenerateMenus
             ]);
 
             $this->mainRoute($menu, [
-                'icon' => ' ph ph-note',
+                'icon' => 'crm-icon crm-pages',
                 'title' => __('page.title'),
                 'route' => ['backend.pages.index'],
                 'active' => ['app/pages'],
@@ -690,7 +690,7 @@ class GenerateMenus
 
             // --- APP BANNER ---
             $this->mainRoute($menu, [
-                'icon' => 'ph ph-exam',
+                'icon' => 'crm-icon crm-app-banner',
                 'title' => __('sidebar.app_banner'),
                 'route' => 'backend.app-banners.index',
                 'active' => 'app/app-banners',
@@ -700,7 +700,7 @@ class GenerateMenus
 
             // --- FAQ ---
             $this->mainRoute($menu, [
-                'icon' => 'ph ph-question',
+                'icon' => 'crm-icon crm-faq',
                 'title' => __('messages.faq_title'),
                 'route' => 'backend.faqs.index',
                 'active' => ['app/faqs'],
@@ -710,14 +710,14 @@ class GenerateMenus
             // --- CUSTOM FORMS ---
             if (auth()->user()->hasRole('admin') || auth()->user()->hasRole('demo_admin')) {
                 $custom_form = $this->parentMenu($menu, [
-                    'icon' => 'ph ph-table',
+                    'icon' => 'crm-icon crm-custom-forms',
                     'title' => __('messages.customforms'),
                     'nickname' => 'custom_form',
                     'permission' => ['view_notification'],
                     'order' => 0,
                 ]);
                 $this->childMain($custom_form, [
-                    'icon' => 'ph ph-list-bullets',
+                    'icon' => 'crm-icon crm-custom-forms',
                     'title' => __('messages.customforms_list'),
                     'route' => 'backend.custom-form.index',
                     'shortTitle' => 'Li',
@@ -729,7 +729,7 @@ class GenerateMenus
 
             // --- NOTIFICATION ---
             $notification = $this->parentMenu($menu, [
-                'icon' => 'ph ph-bell',
+                'icon' => 'crm-icon crm-notifications',
                 'title' => __('notification.title'),
                 'nickname' => 'notifications',
                 'permission' => ['view_notification'],
@@ -737,7 +737,7 @@ class GenerateMenus
             ]);
 
             $this->childMain($notification, [
-                'icon' => 'ph ph-list-bullets',
+                    'icon' => 'crm-icon crm-notifications',
                 'title' => __('notification.list'),
                 'route' => 'backend.notifications.index',
                 'shortTitle' => 'Li',
@@ -747,7 +747,7 @@ class GenerateMenus
             ]);
             if (auth()->user()->hasRole('admin') || auth()->user()->hasRole('demo_admin')) {
                 $this->childMain($notification, [
-                    'icon' => 'ph ph-layout',
+                    'icon' => 'crm-icon crm-notifications',
                     'title' => __('notification.template'),
                     'route' => 'backend.notification-templates.index',
                     'shortTitle' => 'TE',
@@ -759,7 +759,7 @@ class GenerateMenus
 
             // --- SETTING ---
             $this->mainRoute($menu, [
-                'icon' => 'ph ph-gear-six',
+                'icon' => 'crm-icon crm-settings',
                 'title' => __('menu.settings'),
                 'route' => 'backend.settings',
                 'active' => 'app/settings',
@@ -770,7 +770,7 @@ class GenerateMenus
             // --- FRONTEND SETTING ---
             if (!auth()->user()->hasRole('doctor') && !auth()->user()->hasRole('vendor') && !auth()->user()->hasRole('receptionist')) {
                 $this->mainRoute($menu, [
-                    'icon' => 'ph ph-layout',
+                    'icon' => 'crm-icon crm-frontend-settings',
                     'title' =>  __('sidebar.frontend_setting'),
                     'route' => 'frontend_setting.index',
                     'active' => ['app/frontend_setting'],
@@ -781,7 +781,7 @@ class GenerateMenus
 
             // --- LOG/BACKUPS ---
             $location11 = $this->parentMenu($menu, [
-                'icon' => 'ph ph-note',
+                'icon' => 'crm-icon crm-log-backups',
                 'title' => __('sidebar.log'),
                 'nickname' => 'log',
                 'permission' => ['view_backup'],
@@ -794,7 +794,7 @@ class GenerateMenus
                 'shortTitle' => '',
                 'permission' => ['view_backup'],
                 'order' => 0,
-                'icon' => 'ph ph-note',
+                'icon' => 'crm-icon crm-log-backups',
             ]);
             $this->childMain($location11, [
                 'title' => __('sidebar.activity_logs'),
@@ -803,14 +803,14 @@ class GenerateMenus
                 'shortTitle' => '',
                 'permission' => ['view_backup'],
                 'order' => 0,
-                'icon' => 'ph ph-note',
+                'icon' => 'crm-icon crm-log-backups',
             ]);
 
             // --- ACCESS CONTROL ---
             if (auth()->user()->hasRole('admin')) {
 
                 $this->mainRoute($menu, [
-                    'icon' => 'ph ph-devices',
+                    'icon' => 'crm-icon crm-access-control',
                     'title' => __('sidebar.access_control'),
                     'route' => 'backend.permission-role.list',
                     'active' => ['app/permission-role'],
