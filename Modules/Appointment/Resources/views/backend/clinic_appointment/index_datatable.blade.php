@@ -858,83 +858,46 @@ function populateReferralDoctors(
     )
 }
 
-function populateReferralSpecialties(
-    specialtyGroups
-) {
-    const select =
-        document.getElementById(
-            'referral_specialty_id'
-        )
+function populateReferralSpecialties(specialtyGroups) {
+    const select = document.getElementById(
+        'referral_specialty_id'
+    );
 
     if (!select) {
         throw new Error(
             'Referral specialty field was not found.'
-        )
+        );
     }
 
     resetReferralSelect(
         select,
         'Search or select a speciality'
-    )
+    );
 
-    specialtyGroups.forEach(group => {
-        const optionGroup =
-            document.createElement(
-                'optgroup'
-            )
+    specialtyGroups.forEach(function (group) {
+        const specialties = Array.isArray(group.items)
+            ? group.items
+            : [];
 
-        optionGroup.label =
-            group.category ||
-            'Other specialties'
+        specialties.forEach(function (specialty) {
+            const option = document.createElement('option');
 
-        const specialties =
-            Array.isArray(group.items)
-                ? group.items
-                : []
+            option.value = String(specialty.id);
+            option.textContent = specialty.name;
+            option.dataset.specialtyName = specialty.name;
 
-        specialties.forEach(
-            specialty => {
-                const option =
-                    document.createElement(
-                        'option'
-                    )
+            select.appendChild(option);
+        });
+    });
 
-                option.value =
-                    String(specialty.id)
+    referralSpecialtiesLoaded = true;
 
-                option.textContent =
-                    specialty.name
-
-                option.dataset
-                    .specialtyName =
-                    specialty.name
-
-                optionGroup.appendChild(
-                    option
-                )
-            }
-        )
-
-        if (
-            optionGroup.children.length >
-            0
-        ) {
-            select.appendChild(
-                optionGroup
-            )
-        }
-    })
-
-    referralSpecialtiesLoaded = true
-
-    initializeReferralSpecialtySearch()
+    initializeReferralSpecialtySearch();
 
     console.log(
         'Referral specialties loaded:',
-        select.querySelectorAll(
-            'option:not([value=""])'
-        ).length
-    )
+        select.querySelectorAll('option:not([value=""])').length
+    );
 }
 
 async function loadReferralDoctors() {
