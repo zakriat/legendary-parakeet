@@ -269,6 +269,11 @@
                                 autocomplete="tel"
                                 placeholder="Contact telephone number"
                             >
+                            <input
+    type="hidden"
+    id="receiving_doctor_phone_country"
+    name="receiving_doctor_phone_country"
+>
                         </div>
 
                         {{-- Urgency --}}
@@ -792,3 +797,61 @@
     z-index: 1095;
 }
 </style>
+
+@push('after-styles')
+<link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.1.1/css/intlTelInput.css"
+>
+<style>
+    #appointment-referral-modal .iti {
+        width: 100%;
+    }
+
+    #appointment-referral-modal .iti__tel-input {
+        width: 100%;
+        min-height: 44px;
+    }
+</style>
+@endpush
+
+@push('after-scripts')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.1.1/js/intlTelInput.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var phoneInput = document.getElementById('receiving_doctor_phone');
+    var referralForm = document.getElementById('appointment-referral-form');
+    var referralModal = document.getElementById('appointment-referral-modal');
+
+    if (!phoneInput || !window.intlTelInput) {
+        return;
+    }
+
+    var phoneIti = window.intlTelInput(phoneInput, {
+        initialCountry: 'gb',
+        separateDialCode: true,
+        nationalMode: false,
+        autoPlaceholder: 'aggressive',
+        utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.1.1/js/utils.js'
+    });
+
+    if (referralModal) {
+        referralModal.addEventListener('shown.bs.modal', function () {
+            if (phoneInput.value) {
+                phoneIti.setNumber(phoneInput.value);
+            }
+        });
+    }
+
+    /* Runs before the existing form submit code */
+    if (referralForm) {
+        referralForm.addEventListener('submit', function () {
+            if (phoneInput.value.trim()) {
+                phoneInput.value = phoneIti.getNumber();
+            }
+        }, true);
+    }
+});
+</script>
+@endpush
