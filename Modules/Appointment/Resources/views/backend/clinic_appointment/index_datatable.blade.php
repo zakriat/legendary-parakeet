@@ -1520,63 +1520,6 @@ if (
                     }
                 )
 
-            let referralPhoneIti = null;
-
-function initialiseReferralPhoneInput() {
-    const input = document.getElementById('receiving_doctor_phone');
-
-    if (!input || !window.intlTelInput || referralPhoneIti) {
-        return;
-    }
-
-    referralPhoneIti = window.intlTelInput(input, {
-        initialCountry: 'gb',
-        separateDialCode: true,
-        nationalMode: false,
-        autoPlaceholder: 'aggressive',
-        utilsScript:
-            'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.1.1/js/utils.js'
-    });
-
-    const updateCountry = function () {
-        const country = referralPhoneIti.getSelectedCountryData();
-
-        document.getElementById(
-            'receiving_doctor_phone_country'
-        ).value = country.iso2 || '';
-    };
-
-    input.addEventListener('countrychange', updateCountry);
-    updateCountry();
-}
-
-document.addEventListener(
-    'DOMContentLoaded',
-    initialiseReferralPhoneInput
-);
-
-document.getElementById(
-    'appointment-referral-modal'
-)?.addEventListener('shown.bs.modal', function () {
-    initialiseReferralPhoneInput();
-
-    const input = document.getElementById('receiving_doctor_phone');
-
-    if (referralPhoneIti && input && input.value) {
-        referralPhoneIti.setNumber(input.value);
-    }
-});
-
-/* Runs before the existing referral submit handler creates FormData */
-document.getElementById(
-    'appointment-referral-form'
-)?.addEventListener('submit', function () {
-    const input = document.getElementById('receiving_doctor_phone');
-
-    if (referralPhoneIti && input && input.value.trim()) {
-        input.value = referralPhoneIti.getNumber();
-    }
-}, true);
         </script>
 
         <!-- DataTables Core and Extensions -->
