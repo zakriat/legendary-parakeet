@@ -65,22 +65,21 @@ import 'node-snackbar/dist/snackbar.min.css'
     }
     /*-------------Tooltip--------------------*/
     // Initialize tooltip function
-    window.tooltipInit = () => {
-      if (typeof bootstrap !== typeof undefined) {
-        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        tooltipTriggerList.map(function (tooltipTriggerEl) {
-          return new bootstrap.Tooltip(tooltipTriggerEl)
-        })
+window.tooltipInit = () => {
+  if (typeof bootstrap === 'undefined') return;
 
-        const sidebarTooltipTriggerList = [].slice.call(document.querySelectorAll('[data-sidebar-toggle="tooltip"]'))
-        sidebarTooltipTriggerList.map(function (tooltipTriggerEl) {
-          return new bootstrap.Tooltip(tooltipTriggerEl)
-        })
-      } else {
-        console.warn('Bootstrap is not available, tooltips cannot be initialized');
-      }
+  const items = document.querySelectorAll(
+    '[data-bs-toggle="tooltip"], [data-sidebar-toggle="tooltip"]'
+  );
+
+  items.forEach((item) => {
+    try {
+      bootstrap.Tooltip.getOrCreateInstance(item);
+    } catch (error) {
+      console.warn('Skipped broken tooltip element:', item, error);
     }
-
+  });
+};
     // Initialize tooltips immediately
     window.tooltipInit()
     /*-------------Progress Bar------------------*/
