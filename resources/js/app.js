@@ -252,7 +252,7 @@
   const initDatatable = ({ url, finalColumns, advanceFilter, drawCallback = undefined, orderColumn }) => {
 
 
-    const data_table_limit = $('meta[name="data_table_limit"]').attr('content');
+    const data_table_limit = Number(   $('meta[name="data_table_limit"]').attr('content') ) || 10;
 
 
     // console.log("test",advanceFilter);
@@ -329,7 +329,7 @@
 
   // Enhanced initDatatable function with footer positioning
   const enhancedInitDatatable = ({ url, finalColumns, advanceFilter, drawCallback = undefined, orderColumn }) => {
-    const data_table_limit = $('meta[name="data_table_limit"]').attr('content');
+    const data_table_limit = Number(   $('meta[name="data_table_limit"]').attr('content') ) || 10;
 
     window.renderedDataTable = $('#datatable').DataTable({
       processing: true,
