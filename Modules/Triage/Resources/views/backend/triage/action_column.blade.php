@@ -1,21 +1,25 @@
-<div class="d-flex gap-2 align-items-center">
+<div class="d-flex gap-3 align-items-center">
     @hasPermission('view_triage_queue')
-    <a href="{{ route('backend.triage.show', $data->id) }}"
-       class="btn btn-primary btn-sm"
-       data-bs-toggle="tooltip"
-       title="{{ __('messages.open') }}">
-        <i class="ph ph-arrow-square-out"></i>
+    <a
+        href="{{ route('backend.triage.show', $data->id) }}"
+        class="btn text-danger p-0 fs-5"
+        data-bs-toggle="tooltip"
+        title="{{ __('messages.open') }}"
+    >
+        <i class="ph ph-arrow-square-out align-middle"></i>
     </a>
     @endhasPermission
 
     @if($data->status !== 'closed')
     @hasPermission('edit_triage')
-    <button type="button"
-            class="btn btn-primary btn-sm"
-            onclick="closeTriage({{ $data->id }})"
-            data-bs-toggle="tooltip"
-            title="{{ __('triage.status_closed') }}">
-        <i class="ph ph-check-circle"></i>
+    <button
+        type="button"
+        class="btn text-success p-0 fs-5"
+        onclick="closeTriage({{ $data->id }})"
+        data-bs-toggle="tooltip"
+        title="{{ __('triage.status_closed') }}"
+    >
+        <i class="ph ph-check-circle align-middle"></i>
     </button>
     @endhasPermission
     @endif
