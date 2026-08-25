@@ -122,7 +122,8 @@ class AppointmentsController extends Controller
 
     public function index_data()
     {
-        $query = Appointment::query();
+        // $query = Appointment::query();
+        $query = Appointment::where('type', 'appointment');
         if (auth()->user()->hasRole('admin') || auth()->user()->hasRole('demo_admin')) {
             $query;
         } else {
