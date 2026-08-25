@@ -42,7 +42,7 @@ class BackendController extends Controller
         $today = Carbon::today();
         $action = $request->action ?? 'reset';
 
-        $appointment = Appointment::CheckMultivendor();
+        $appointment = Appointment::CheckMultivendor()->where('type', 'appointment');
         $totalappointment = $appointment->count();
         $patientcount = $appointment->with(['user'])->get();
         $childAge = 25;
@@ -215,7 +215,7 @@ class BackendController extends Controller
             $endDate = $dateRangeParts[1] ?? date('Y-m-d');
             $date_range = $startDate . ' to ' . $endDate;
         }
-        $appointment = Appointment::CheckMultivendor();
+        $appointment = Appointment::CheckMultivendor()->where('type', 'appointment');
         $totalappointment = $appointment->where(function ($query) use ($startDate, $endDate) {
 
             $query->whereDate('start_date_time', '>=', $startDate)
