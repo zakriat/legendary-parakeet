@@ -312,7 +312,7 @@ class ClinicAppointmentController extends Controller
             ->addColumn('check', function ($data) {
                 return '<input type="checkbox" class="form-check-input select-table-row"  id="datatable-row-' . $data->id . '"  name="datatable_ids[]" value="' . $data->id . '" onclick="dataTableRowCheck(' . $data->id . ')">';
             })
-            - use ($customform) {
+            ->addColumn('action', function ($data) use ($customform) {
                 return view('appointment::backend.clinic_appointment.datatable.action_column', compact('data', 'customform'));
             })
             ->editColumn('updated_at', function ($data) {
@@ -508,7 +508,7 @@ class ClinicAppointmentController extends Controller
             ->addColumn('check', function ($data) {
                 return '<input type="checkbox" class="form-check-input select-table-row"  id="datatable-row-' . $data->id . '"  name="datatable_ids[]" value="' . $data->id . '" onclick="dataTableRowCheck(' . $data->id . ')">';
             })
-            - {
+            ->addColumn('action', function ($data) {
                 return view('clinic::backend.patientList.action_column', compact('data'));
             })
             ->editColumn('updated_at', function ($data) {
@@ -1765,6 +1765,7 @@ class ClinicAppointmentController extends Controller
                 return '<span class="badge bg-warning"><i class="ph ph-clock"></i> Pending</span>';
             })
             ->addColumn('action', function ($data) {
+                
                 // return '<div class="d-flex gap-2">
                 //             <a href="' . route('backend.appointments.show', $data->id) . '" class="btn btn-sm btn-primary" title="View Details">
                 //                 <i class="ph ph-eye"></i>
@@ -1776,7 +1777,8 @@ class ClinicAppointmentController extends Controller
                 //                 <i class="ph ph-trash"></i>
                 //             </button>
                 //         </div>';
-                return '<div class="d-flex gap-3 align-items-center">
+
+    return '<div class="d-flex gap-3 align-items-center">
     <a
         href="' . route('backend.appointments.show', $data->id) . '"
         class="btn text-danger p-0 fs-5"
@@ -1806,35 +1808,7 @@ class ClinicAppointmentController extends Controller
     </button>
 </div>';
 
-                return '<div class="d-flex gap-3 align-items-center">
-    <a
-        href="' . route('backend.appointments.show', $data->id) . '"
-        class="btn text-danger p-0 fs-5"
-        data-bs-toggle="tooltip"
-        title="View Details"
-    >
-        <i class="ph ph-eye align-middle"></i>
-    </a>
-
-    <a
-        href="' . route('backend.blood-tests.edit', $data->id) . '"
-        class="btn text-success p-0 fs-5"
-        data-bs-toggle="tooltip"
-        title="Edit"
-    >
-        <i class="ph ph-pencil-simple-line align-middle"></i>
-    </a>
-
-    <button
-        type="button"
-        class="btn text-danger p-0 fs-5"
-        data-bs-toggle="tooltip"
-        title="Delete"
-        onclick="deleteBloodTest(' . $data->id . ')"
-    >
-        <i class="ph ph-trash align-middle"></i>
-    </button>
-</div>';
+                
             })
             ->rawColumns(['check', 'patient_name', 'test_type', 'appointment_datetime', 'amount', 'status', 'payment_status', 'report_status', 'action'])
             ->make(true);
