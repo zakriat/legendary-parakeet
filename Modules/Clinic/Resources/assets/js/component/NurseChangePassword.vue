@@ -78,7 +78,9 @@ const reset_datatable_close_modal = (res) => {
   IS_SUBMITED.value = false
   if (res.status) {
     window.successSnackbar(res.message)
-    bootstrap.Modal.getInstance('#nurse-change-password').hide()
+    
+    const modalElement = document.getElementById('nurse-change-password')
+    bootstrap.Modal.getOrCreateInstance(modalElement).hide()
     setFormData(defaultData())
   } else {
     window.errorSnackbar(res.message)
