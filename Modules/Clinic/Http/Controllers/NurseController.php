@@ -431,39 +431,72 @@ class NurseController extends Controller
         return response()->json(['message' => $message, 'status' => true], 200);
     }
 
+    // public function change_password(Request $request)
+    // {
+    //     $data = $request->all();
+    //     $nurse_id = $data['nurse_id'];
+    //     $user = User::role(['nurse'])->findOrFail($nurse_id);
+
+    //     // Check old password
+    //     if (!isset($data['old_password']) || !Hash::check($data['old_password'], $user->password)) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => __('nurse.old_password_incorrect'),
+    //             'all_message' => ['old_password' => [__('nurse.old_password_incorrect')]]
+    //         ], 422);
+    //     }
+
+    //     // Prevent same as old password
+    //     if (Hash::check($data['password'], $user->password)) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => __('nurse.new_password_same_as_old'),
+    //             'all_message' => ['password' => [__('nurse.new_password_same_as_old')]]
+    //         ], 422);
+    //     }
+
+    //     // Update password
+    //     $request_data = $request->only('password');
+    //     $request_data['password'] = Hash::make($request_data['password']);
+    //     $user->update($request_data);
+
+    //     $message = __('nurse.password_update');
+
+    //     return response()->json(['message' => $message, 'status' => true], 200);
+    // }
     public function change_password(Request $request)
-    {
-        $data = $request->all();
-        $nurse_id = $data['nurse_id'];
-        $user = User::role(['nurse'])->findOrFail($nurse_id);
+{
+    $request->validate([
+        'nurse_id' => ['required', 'integer', 'exists:users,id'],
+        'password' => [
+            'required',
+            'string',
+            'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d])\S{8,14}$/',
+        ],
+        'confirm_password' => ['required', 'same:password'],
+    ]);
 
-        // Check old password
-        if (!isset($data['old_password']) || !Hash::check($data['old_password'], $user->password)) {
-            return response()->json([
-                'status' => false,
-                'message' => __('nurse.old_password_incorrect'),
-                'all_message' => ['old_password' => [__('nurse.old_password_incorrect')]]
-            ], 422);
-        }
+    $user = User::role('nurse')->findOrFail($request->nurse_id);
 
-        // Prevent same as old password
-        if (Hash::check($data['password'], $user->password)) {
-            return response()->json([
-                'status' => false,
-                'message' => __('nurse.new_password_same_as_old'),
-                'all_message' => ['password' => [__('nurse.new_password_same_as_old')]]
-            ], 422);
-        }
-
-        // Update password
-        $request_data = $request->only('password');
-        $request_data['password'] = Hash::make($request_data['password']);
-        $user->update($request_data);
-
-        $message = __('nurse.password_update');
-
-        return response()->json(['message' => $message, 'status' => true], 200);
+    if (Hash::check($request->password, $user->password)) {
+        return response()->json([
+            'status' => false,
+            'message' => __('nurse.new_password_same_as_old'),
+            'all_message' => [
+                'password' => [__('nurse.new_password_same_as_old')],
+            ],
+        ], 422);
     }
+
+    $user->update([
+        'password' => Hash::make($request->password),
+    ]);
+
+    return response()->json([
+        'status' => true,
+        'message' => __('nurse.password_update'),
+    ]);
+}
 
     public function getStates(Request $request)
     {
