@@ -64,10 +64,11 @@ return [
             // 'dump' => [
             //     'dump_binary_path' => 'C:\\wamp64\\bin\\mysql\\mysql9.1.0\\bin',                
             // ]
-
+            
             'dump' => [
-                'dump_binary_path' => '/usr/bin', // for Ubuntu (run `which mysqldump` to confirm)
-                'use_single_transaction' => true, // optional, avoids locking tables
+                'dump_binary_path' => '/usr/bin',
+                'use_single_transaction' => true,
+                'skip_ssl' => env('DB_DUMP_SKIP_SSL', false),
             ],
         ],
 
