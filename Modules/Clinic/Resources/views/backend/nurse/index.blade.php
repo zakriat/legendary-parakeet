@@ -189,4 +189,30 @@
       // resetActionButtons()
     })
 </script>
+
+<script>
+    document.addEventListener('click', function (event) {
+        const button = event.target.closest('.nurse-change-password-btn');
+
+        if (!button) {
+            return;
+        }
+
+        const nurseId = button.dataset.nurseId;
+        const modalElement = document.getElementById('nurse-change-password');
+
+        if (!modalElement) {
+            console.error('Nurse password modal was not found.');
+            return;
+        }
+
+        document.dispatchEvent(new CustomEvent('nurse_change_password', {
+            detail: {
+                nurse_id: Number(nurseId)
+            }
+        }));
+
+        bootstrap.Modal.getOrCreateInstance(modalElement).show();
+    });
+</script>
 @endpush
