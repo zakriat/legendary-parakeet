@@ -107,61 +107,54 @@ class BackupController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function create()
-    {
-        try {
-            // start the backup process
-            Artisan::call('backup:run');
-            $output = Artisan::output();
+public function create()
+{
+    try {
+        $exitCode = Artisan::call('backup:run', [
+            '--verbose' => true,
+            '--disable-notifications' => true,
+        ]);
 
-            // Log the results
-            Log::info("Backpack\BackupManager -- new backup started from admin interface \r\n" . $output);
+        $output = trim(Artisan::output());
 
-            // return the results as a response to the ajax call
-            flash("<i class='fas fa-check'></i> New backup created")->success()->important();
-
-            return redirect()->back();
-        } catch (Exception $e) {
-            Flash::error($e->getMessage());
-
-            return redirect()->back();
+        if ($exitCode !== 0) {
+            throw new \RuntimeException($output ?: 'Full backup command failed.');
         }
+
+        Log::info('Full backup completed.', ['output' => $output]);
+
+        return back()->with('success', 'New backup created successfully.');
+    } catch (\Throwable $e) {
+        Log::error('Full backup failed.', ['message' => $e->getMessage()]);
+
+        return back()->with('error', 'Backup failed: ' . $e->getMessage());
     }
+}
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function createDBBk()
-    {
-        // try {
-        // Clear cache before backup (optional)
-        Artisan::call('cache:clear');
+public function createDBBk()
+{
+    try {
+        $exitCode = Artisan::call('backup:run', [
+            '--only-db' => true,
+            '--verbose' => true,
+            '--disable-notifications' => true,
+        ]);
 
-        // Run only database backup
-        //    Artisan::call('backup:run --only-db');
+        $output = trim(Artisan::output());
 
-        Artisan::call('backup:run --only-db --verbose');
+        if ($exitCode !== 0) {
+            throw new \RuntimeException($output ?: 'Database backup command failed.');
+        }
 
-        // // Check if backup file exists
-        // $files = Storage::disk('local')->files('laravel-backups');
+        Log::info('Database backup completed.', ['output' => $output]);
 
-        // if (!empty($files)) {
-        //     $latestBackup = collect($files)->last(); // Get latest file
-        //     $backupPath = storage_path("app/{$latestBackup}");
+        return back()->with('success', 'Database backup created successfully.');
+    } catch (\Throwable $e) {
+        Log::error('Database backup failed.', ['message' => $e->getMessage()]);
 
-        //     // Log or display backup file path
-        Log::info("Database backup created");
-
-        return back()->with('success', 'Database backup created at');
-
-        // } catch (\Exception $e) {
-        //     Log::error("Backup failed: " . $e->getMessage());
-        //     return back()->with('error', 'Backup failed: ' . $e->getMessage());
-        // }
+        return back()->with('error', 'Database backup failed: ' . $e->getMessage());
     }
+}
 
     /**
      * Downloads a backup zip file.
